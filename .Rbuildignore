@@ -1,3 +1,5 @@
 ^immor\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^[.]?air[.]toml$
+^\.vscode$
