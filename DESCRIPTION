@@ -1,6 +1,6 @@
 Package: immor
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person("Layal Christine", "Lettry", , "layal@cynkra.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0008-6396-0523"))
