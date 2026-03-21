@@ -1,0 +1,25 @@
+url: https://layalchristine24.github.io/immor/
+
+reference:
+- title: Search
+  contents:
+  - immor_query
+  - immor_fetch
+
+- title: Schema
+  contents:
+  - immor_schema
+  - immor_deduplicate
+  - ensure_type
+
+- title: Portals
+  contents:
+  - immor_portals
+  - immor_portal
+  - portal_flatfox
+
+- title: Portal infrastructure
+  contents:
+  - new_portal
+  - fetch_listings
+  - parse_listing

@@ -3,3 +3,8 @@
 ^README\.Rmd$
 ^[.]?air[.]toml$
 ^\.vscode$
+^doc$
+^\.claude$
+^CLAUDE\.md$
+^plan\.md$
+^_pkgdown\.yml$
