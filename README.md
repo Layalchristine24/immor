@@ -7,7 +7,11 @@
 
 <!-- badges: end -->
 
-The goal of immor is to …
+immor (“immobilier” + “R”, sounds like “immortal”) scrapes real estate
+listings from [flatfox.ch](https://flatfox.ch) via its public API,
+normalizes them into a 28-column tibble, and provides type-safe
+deduplication. Designed as the data engine behind
+[blockr.immor](https://github.com/Layalchristine24/blockr.immor).
 
 ## Installation
 
@@ -18,3 +22,29 @@ You can install the development version of immor from
 # install.packages("pak")
 pak::pak("Layalchristine24/immor")
 ```
+
+## Usage
+
+``` r
+library(immor)
+
+# Fetch listings from all portals
+query <- immor_query()
+listings <- immor_fetch(query)
+```
+
+## Visual Pipeline
+
+For an interactive, no-code data pipeline UI, see the companion package
+[blockr.immor](https://github.com/Layalchristine24/blockr.immor).
+
+## Supported Portals
+
+| Portal     | Country     | Status                 |
+|------------|-------------|------------------------|
+| flatfox.ch | Switzerland | Available (public API) |
+
+Currently only flatfox.ch has a public API. All other major portals
+(homegate, immoscout24, comparis, newhome, properstar) use bot
+protection (DataDome/Cloudflare). See `doc/portals.md` for the full
+investigation.

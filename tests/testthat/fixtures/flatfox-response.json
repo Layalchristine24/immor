@@ -1,0 +1,51 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "pk": 12345,
+      "url": "/en/flat/12345",
+      "public_title": "Bahnhofstrasse 10, 8001 Zurich - CHF 1500 excl. utilities per month",
+      "short_title": "Sunny 3.5 room apartment in Zurich",
+      "description": "A lovely apartment in the city center with great views.",
+      "price_display": "1500",
+      "number_of_rooms": "3.5",
+      "surface_living": "85",
+      "offer_type": "RENT",
+      "object_category": "APARTMENT",
+      "street": "Bahnhofstrasse 10",
+      "zipcode": "8001",
+      "city": "Zurich",
+      "latitude": 47.3769,
+      "longitude": 8.5417,
+      "floor": 2,
+      "images": [8716673, 8716674],
+      "moving_date": "2026-04-01",
+      "year_built": null,
+      "is_furnished": false
+    },
+    {
+      "pk": 12346,
+      "url": "/en/flat/12346",
+      "public_title": "Seestrasse 20, 8002 Zurich - CHF 950 excl. utilities per month",
+      "short_title": "Modern studio near lake",
+      "description": "Compact studio with lake views.",
+      "price_display": "950",
+      "number_of_rooms": "1",
+      "surface_living": "32",
+      "offer_type": "RENT",
+      "object_category": "APARTMENT",
+      "street": "Seestrasse 20",
+      "zipcode": "8002",
+      "city": "Zurich",
+      "latitude": 47.3650,
+      "longitude": 8.5350,
+      "floor": 5,
+      "images": [],
+      "moving_date": "2026-03-15",
+      "year_built": 2020,
+      "is_furnished": true
+    }
+  ]
+}

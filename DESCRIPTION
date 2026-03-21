@@ -1,16 +1,33 @@
 Package: immor
-Title: What the Package Does (One Line, Title Case)
+Title: Real Estate Portal Aggregator
 Version: 0.0.0.9001
-Authors@R: 
-    person("Layal Christine", "Lettry", , "layal@cynkra.com", role = c("aut", "cre"),
+Authors@R:
+    person("Layal Christine", "Lettry", , "layal@cynkra.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0009-0008-6396-0523"))
-Description: What the package does (one paragraph).
+Description: Scrapes and aggregates real estate listings from property
+    portals. Currently supports 'flatfox.ch' via its public REST API.
+    Provides a normalized 28-column schema for cross-portal comparison
+    and deduplication of listings appearing on multiple sites. Designed
+    for use with 'blockr.immor' for interactive visual data pipelines.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("collate", "namespace", "rd",
     "roxyglobals::global_roclet"))
 RoxygenNote: 7.3.3
-Suggests: 
-    roxyglobals
+Imports:
+    cli,
+    dplyr,
+    glue,
+    httr2,
+    purrr,
+    rlang,
+    tibble,
+    vctrs
+Suggests:
+    ellmer,
+    httptest2,
+    roxyglobals,
+    testthat (>= 3.0.0)
 Config/roxyglobals/filename: globals.R
 Config/roxyglobals/unique: FALSE
+Config/testthat/edition: 3
