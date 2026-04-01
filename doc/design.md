@@ -15,7 +15,7 @@ immor_query()          Create query object
 immor_fetch()          Dispatch to portal scrapers
       |
       +---> fetch_listings.immor_portal_flatfox()   (JSON API)
-      +---> fetch_listings.immor_portal_homegate()   (blocked, returns empty)
+      +---> fetch_listings.immor_portal_weckaeby()  (HTML scraping via rvest)
       |
       v
 parse_listing()        Normalize each raw listing to immor_schema()
