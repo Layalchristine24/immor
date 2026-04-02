@@ -30,6 +30,25 @@ immor_deduplicate()    Remove cross-portal duplicates
 tibble result          Unified listings tibble (28 columns)
 ```
 
+## Inspecting Results
+
+`immor_fetch()` returns a tibble. The default `print()` output is a condensed
+tibble header — use these to explore the data:
+
+```r
+listings <- immor_fetch(immor_query())
+
+dplyr::glimpse(listings)         # full column overview with types and sample values
+head(listings$title)             # first few listing titles
+table(listings$portal)           # count per portal
+table(listings$transaction_type) # "rent" vs "buy"
+View(listings)                   # RStudio spreadsheet view
+```
+
+Expected output shape: ~160–200 rows, 28 columns, portals `"flatfox"` and
+`"weckaeby"`. A 404 warning for one weck-aeby listing is normal (listing
+removed between archive fetch and detail fetch).
+
 ## Schema Design
 
 ### Common denominator approach

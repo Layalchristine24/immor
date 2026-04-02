@@ -42,7 +42,16 @@ library(immor)
 # Fetch listings from all portals
 query <- immor_query()
 listings <- immor_fetch(query)
+
+# Inspect the result
+dplyr::glimpse(listings)        # 28-column schema overview
+head(listings$title)            # listing titles
+table(listings$portal)          # count per portal
+table(listings$transaction_type) # rent vs buy
 ```
+
+Note: `print(listings)` shows a condensed tibble summary. Use `dplyr::glimpse(listings)`
+or `View(listings)` in RStudio for the full column view.
 
 ## Visual Pipeline
 
