@@ -61,7 +61,7 @@ fetch_listings.immor_portal_weckaeby <- function(
             "Failed to parse {.url {link}}: {conditionMessage(e)}"
           )
           NULL
-        },
+        }
       )
       if (!is.null(listing)) {
         all_listings <- c(all_listings, list(listing))
