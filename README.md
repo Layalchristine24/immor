@@ -43,6 +43,16 @@ Note: `print(listings)` shows a condensed tibble summary. Use
 `dplyr::glimpse(listings)` or `View(listings)` in RStudio for the full
 column view.
 
+``` r
+# Filter by portal or transaction type
+listings |> dplyr::filter(portal == "weckaeby")
+listings |> dplyr::filter(transaction_type == "rent")
+
+# Check distinct values before filtering
+dplyr::distinct(listings, portal)
+dplyr::distinct(listings, transaction_type)
+```
+
 ## Visual Pipeline
 
 For an interactive, no-code data pipeline UI, see the companion package

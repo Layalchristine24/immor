@@ -40,7 +40,7 @@ listings <- immor_fetch(immor_query())
 
 dplyr::glimpse(listings)         # full column overview with types and sample values
 head(listings$title)             # first few listing titles
-table(listings$portal)           # count per portal
+table(listings$portal)           # count per portal — valid values: "flatfox", "weckaeby"
 table(listings$transaction_type) # "rent" vs "buy"
 View(listings)                   # RStudio spreadsheet view
 ```
@@ -48,6 +48,30 @@ View(listings)                   # RStudio spreadsheet view
 Expected output shape: ~160–200 rows, 28 columns, portals `"flatfox"` and
 `"weckaeby"`. A 404 warning for one weck-aeby listing is normal (listing
 removed between archive fetch and detail fetch).
+
+### Filtering
+
+```r
+# Filter by portal (check exact name with table(listings$portal) first)
+listings |> dplyr::filter(portal == "weckaeby")
+listings |> dplyr::filter(portal == "flatfox")
+
+# Filter by transaction type
+listings |> dplyr::filter(transaction_type == "rent")
+listings |> dplyr::filter(transaction_type == "buy")
+
+# Distinct values (useful to verify column content before filtering)
+dplyr::distinct(listings, portal)
+dplyr::distinct(listings, transaction_type)
+
+# Combine filters
+listings |>
+  dplyr::filter(portal == "weckaeby", transaction_type == "rent") |>
+  dplyr::select(title, price, address_city, rooms)
+```
+
+Note: `print()` on a filtered tibble still shows a condensed header. Use
+`dplyr::glimpse()` or `View()` to see the full result.
 
 ## Schema Design
 
