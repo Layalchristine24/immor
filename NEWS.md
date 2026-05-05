@@ -1,5 +1,10 @@
 <!-- NEWS.md is maintained by https://fledge.cynkra.com, contributors should not edit this file -->
 
+# immor 0.0.0.9003 (2026-05-05)
+
+- Merge branch 'main' of github.com:Layalchristine24/immor.
+
+
 # immor 0.0.0.9002 (2026-05-05)
 
 ## Features
