@@ -7,4 +7,6 @@
 ^\.claude$
 ^CLAUDE\.md$
 ^plan\.md$
+^dev$
 ^_pkgdown\.yml$
+^\.positai$

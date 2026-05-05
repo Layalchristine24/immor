@@ -6,7 +6,7 @@
 \alias{immor-package}
 \title{immor: Real Estate Portal Aggregator}
 \description{
-Scrapes and aggregates real estate listings from property portals. Currently supports 'flatfox.ch' via its public REST API. Provides a normalized 28-column schema for cross-portal comparison and deduplication of listings appearing on multiple sites. Designed for use with 'blockr.immor' for interactive visual data pipelines.
+Scrapes and aggregates real estate listings from property portals. Supports 'flatfox.ch' (REST API) and 'weck-aeby.ch' (HTML scraping via CasaWP). Provides a normalized 28-column schema for cross-portal comparison and deduplication of listings appearing on multiple sites. Designed for use with 'blockr.immor' for interactive visual data pipelines.
 }
 \author{
 \strong{Maintainer}: Layal Christine Lettry \email{layal@cynkra.com} (\href{https://orcid.org/0009-0008-6396-0523}{ORCID}) [copyright holder]

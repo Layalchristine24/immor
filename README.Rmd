@@ -1,5 +1,7 @@
 ---
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -19,9 +21,9 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 immor ("immobilier" + "R", sounds like "immortal") scrapes real estate
-listings from [flatfox.ch](https://flatfox.ch) via its public API,
-normalizes them into a 28-column tibble, and provides type-safe
-deduplication. Designed as the data engine behind
+listings from Swiss property portals, normalizes them into a 28-column
+tibble, and provides type-safe deduplication. Designed as the data
+engine behind
 [blockr.immor](https://github.com/Layalchristine24/blockr.immor).
 
 ## Installation
@@ -40,8 +42,22 @@ pak::pak("Layalchristine24/immor")
 library(immor)
 
 # Fetch listings from all portals
-query <- immor_query()
-listings <- immor_fetch(query)
+listings <- immor_fetch(immor_query())
+
+# Inspect the result
+dplyr::glimpse(listings)              # 28-column schema with types and sample values
+head(listings$title)                  # listing titles
+table(listings$portal)                # count per portal: "flatfox", "weckaeby"
+table(listings$transaction_type)      # "rent" vs "buy"
+table(listings$transaction_type, listings$portal)  
+
+# Filter by portal or transaction type
+listings |> dplyr::filter(portal == "weckaeby")
+listings |> dplyr::filter(transaction_type == "rent")
+
+# Check distinct values before filtering
+dplyr::distinct(listings, portal)
+dplyr::distinct(listings, transaction_type)
 ```
 
 ## Visual Pipeline
@@ -51,11 +67,11 @@ For an interactive, no-code data pipeline UI, see the companion package
 
 ## Supported Portals
 
-| Portal | Country | Status |
-|---|---|---|
-| flatfox.ch | Switzerland | Available (public API) |
+| Portal | Country | Method | Status |
+|---|---|---|---|
+| flatfox.ch | Switzerland | REST API | Available |
+| weck-aeby.ch | Switzerland | HTML scraping (CasaWP) | Available |
 
-Currently only flatfox.ch has a public API. All other major portals
-(homegate, immoscout24, comparis, newhome, properstar) use bot
-protection (DataDome/Cloudflare). See `doc/portals.md` for the full
-investigation.
+Most major Swiss portals (homegate, immoscout24, comparis, newhome,
+properstar) use bot protection (DataDome/Cloudflare) and cannot be
+scraped. See `doc/portals.md` for the full investigation.

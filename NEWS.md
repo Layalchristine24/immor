@@ -8,6 +8,7 @@
 * Removed standalone Shiny app (`run_app()`). Use 'blockr.immor' for the interactive UI.
 * Removed unused `immor_cache()` function.
 * Added `@examples` to all exported functions.
+* `portal_weckaeby()` adds support for weck-aeby.ch, a Swiss real estate agency using the CasaWP WordPress plugin. Listings are scraped from server-rendered HTML using `rvest`. Respects the site's 10-second crawl delay.
 
 # immor 0.0.0.9001 (2026-03-11)
 

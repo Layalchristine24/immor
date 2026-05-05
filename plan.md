@@ -145,12 +145,34 @@ Location: `/Users/layalcynkra/github/layal-owner/blockr.immor/`
 - 🙋‍♂️ Push immor changes to `Layalchristine24/immor`
 - 🙋‍♂️ Push blockr.immor to `Layalchristine24/blockr.immor`
 
-### 3.2 Additional portals 🟢
+### 3.2 weck-aeby.ch portal (CasaWP) ✅
+Server-side rendered WordPress site (CasaWP plugin). No API — HTML scraping with httr2 + rvest.
+robots.txt allows scraping with 10s crawl delay. ~4 buy + ~15 rent listings.
+URLs: `/acheter/` (buy), `/louer/` (rent), `/objet/{slug}/?pk={id}&ret={type}` (detail).
+
+- ✅ 3.2.1 Standalone R script prototype (`dev/weckaeby-prototype.R`)
+  - Fetches both `/acheter/` and `/louer/`, deduplicates links by `pk` param
+  - Parses detail pages: title (`.title`), price, address (Google Maps link), rooms, year, images, availability
+  - Returns 28-column tibble, tested on live site (19 listings scraped)
+- ✅ 3.2.2 Integrated into immor as `R/portal-weckaeby.R`
+  - `portal_weckaeby()` constructor, registered in `immor_portals()`
+  - `fetch_listings.immor_portal_weckaeby()` — two-stage: archive page → detail pages
+  - `parse_listing.immor_portal_weckaeby()` — HTML → schema tibble via `raw_listing` list
+  - `rvest` added to DESCRIPTION Imports
+  - Internal helpers: `weckaeby_parse_price()`, `weckaeby_parse_address()`, `weckaeby_parse_details_block()`
+- ✅ 3.2.3 Tests (62 passing in test-portal-weckaeby.R)
+  - 4 HTML fixture files for buy, rent, no-price, zero-rent cases
+  - Tests: constructor, buy parsing, rent parsing, prix sur demande, CHF 0, validate_listings, price edge cases, address parsing, pk extraction
+- ✅ 3.2.4 Docs & NEWS.md updated
+  - README.Rmd, NEWS.md, doc/portals.md, doc/design.md
+  - R CMD check: 0/0/0 (95 tests total)
+
+### 3.3 Additional portals 🟢
 - 🟢 immoscout24.ch scraper
 - 🟢 comparis.ch scraper
 - 🟢 newhome.ch scraper
 
-### 3.3 Enhancements 🟢
+### 3.4 Enhancements 🟢
 - 🟢 HTTP response caching (re-add `httr2::req_cache()` when needed)
 - 🟢 Fuzzy deduplication method (beyond exact matching)
 - 🟢 Additional blockr blocks (filter block, summary stats block)
