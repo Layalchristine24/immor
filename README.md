@@ -36,6 +36,7 @@ dplyr::glimpse(listings)              # 28-column schema with types and sample v
 head(listings$title)                  # listing titles
 table(listings$portal)                # count per portal: "flatfox", "weckaeby"
 table(listings$transaction_type)      # "rent" vs "buy"
+table(listings$transaction_type, listings$portal)  
 
 # Filter by portal or transaction type
 listings |> dplyr::filter(portal == "weckaeby")
