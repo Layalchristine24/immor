@@ -49,3 +49,6 @@ po/*~
 rsconnect/
 .Rproj.user
 .positai
+
+# rcave runtime artifacts (do not commit)
+.devcontainer/*
