@@ -1,12 +1,13 @@
 # Real Estate Portal Landscape
 
-## Implementation Status (as of 2026-03-21)
+## Implementation Status (as of 2026-04-01)
 
 ### Swiss Portals
 
 | Portal | Status | Protection | Notes |
 |---|---|---|---|
 | flatfox.ch | ✅ Working | None | Public REST API, robots.txt allows scraping |
+| weck-aeby.ch | ✅ Working | None | CasaWP WordPress plugin, HTML scraping with rvest, robots.txt allows with 10s delay |
 | homegate.ch | ❌ Blocked | DataDome | 403, code preserved for future use |
 | immoscout24.ch | ❌ Blocked | DataDome + Cloudflare | 403 |
 | comparis.ch | ❌ Blocked | DataDome | 403 |

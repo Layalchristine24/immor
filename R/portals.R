@@ -11,7 +11,8 @@
 #' @export
 immor_portals <- function() {
   list(
-    flatfox = portal_flatfox
+    flatfox = portal_flatfox,
+    weckaeby = portal_weckaeby
   )
 }
 
