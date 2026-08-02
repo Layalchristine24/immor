@@ -11,5 +11,10 @@ Scrapes and aggregates real estate listings from property portals. Supports 'fla
 \author{
 \strong{Maintainer}: Layal Christine Lettry \email{layal@cynkra.com} (\href{https://orcid.org/0009-0008-6396-0523}{ORCID}) [copyright holder]
 
+Authors:
+\itemize{
+  \item Layal Christine Lettry \email{layal@cynkra.com} (\href{https://orcid.org/0009-0008-6396-0523}{ORCID}) [copyright holder]
+}
+
 }
 \keyword{internal}
