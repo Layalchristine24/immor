@@ -5,6 +5,11 @@
 ^\.vscode$
 ^doc$
 ^\.claude$
+^\.devcontainer$
+^\.github$
+^\.gitignore$
+^\.Rhistory$
+^openspec$
 ^CLAUDE\.md$
 ^plan\.md$
 ^dev$
