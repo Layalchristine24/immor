@@ -52,3 +52,6 @@ rsconnect/
 
 # rcave runtime artifacts (do not commit)
 .devcontainer/*
+
+# Claude Code — commit shared commands/ + skills/, ignore per-user state
+.claude/settings.local.json
