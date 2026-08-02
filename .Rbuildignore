@@ -10,3 +10,4 @@
 ^dev$
 ^_pkgdown\.yml$
 ^\.positai$
+^CODE_OF_CONDUCT\.md$
