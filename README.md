@@ -8,7 +8,7 @@
 <!-- badges: end -->
 
 immor (“immobilier” + “R”, sounds like “immortal”) scrapes real estate
-listings from Swiss property portals, normalizes them into a 28-column
+listings from Swiss property portals, normalises them into a 28-column
 tibble, and provides type-safe deduplication. Designed as the data
 engine behind
 [blockr.immor](https://github.com/Layalchristine24/blockr.immor).
@@ -16,7 +16,7 @@ engine behind
 ## Installation
 
 You can install the development version of immor from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/Layalchristine24/immor) with:
 
 ``` r
 # install.packages("pak")
@@ -36,7 +36,7 @@ dplyr::glimpse(listings)              # 28-column schema with types and sample v
 head(listings$title)                  # listing titles
 table(listings$portal)                # count per portal: "flatfox", "weckaeby"
 table(listings$transaction_type)      # "rent" vs "buy"
-table(listings$transaction_type, listings$portal)  
+table(listings$transaction_type, listings$portal)
 
 # Filter by portal or transaction type
 listings |> dplyr::filter(portal == "weckaeby")
@@ -60,5 +60,22 @@ For an interactive, no-code data pipeline UI, see the companion package
 | weck-aeby.ch | Switzerland | HTML scraping (CasaWP) | Available |
 
 Most major Swiss portals (homegate, immoscout24, comparis, newhome,
-properstar) use bot protection (DataDome/Cloudflare) and cannot be
-scraped. See `doc/portals.md` for the full investigation.
+properstar) use bot protection (DataDome / Cloudflare) and cannot be
+scraped. See the portal-landscape section of
+[`doc/design.md`](doc/design.md#portal-landscape) for the full
+investigation.
+
+## Architecture
+
+The architectural contract lives under
+[`openspec/specs/`](openspec/specs/); [`doc/design.md`](doc/design.md)
+is the human-reading map into it. Start with
+[`openspec/specs/multi-portal-fetch/spec.md`](openspec/specs/multi-portal-fetch/spec.md)
+for the umbrella orchestration, then descend into per-portal specs
+(`portal-flatfox`, `portal-weckaeby`) as needed.
+
+## Code of Conduct
+
+Please note that the immor project is released with a [Contributor Code
+of Conduct](CODE_OF_CONDUCT.md). By contributing to this project you
+agree to abide by its terms.
