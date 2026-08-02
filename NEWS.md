@@ -1,5 +1,16 @@
 <!-- NEWS.md is maintained by https://fledge.cynkra.com, contributors should not edit this file -->
 
+# immor 0.0.0.9004 (2026-08-02)
+
+## Chore
+
+- Update .gitignore.
+
+## Documentation
+
+- Bootstrap OpenSpec + rewrite doc/ + CLAUDE.md + CONTRIBUTING (#3).
+
+
 # immor 0.0.0.9003 (2026-05-05)
 
 - Merge branch 'main' of github.com:Layalchristine24/immor.
