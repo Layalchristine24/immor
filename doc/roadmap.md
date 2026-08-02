@@ -250,6 +250,19 @@ pkgdown's default output directory is `docs/`, which is gitignored. Our source-d
 
 pkgdown ignores directories whose name starts with `.` and the standard R package directories. `openspec/` will show up in the pkgdown site unless we add it to `.Rbuildignore` (it already is) or explicitly hide it. Should verify next time pkgdown site is regenerated.
 
+### Note D. Accepted `R CMD check` NOTE: hidden `.claude` directory
+
+`devtools::check()` emits one `NOTE`:
+
+> checking for hidden files and directories … NOTE
+> Found the following hidden files and directories: `.claude`
+
+Root cause: macOS's LaunchServices (Positron, VSCode with Claude Code) tags `.claude/` with a `com.apple.provenance` extended attribute. That xattr is re-added the instant it's cleared (as long as the IDE is running), so `xattr -cr` doesn't stick. During `R CMD build`, `.Rbuildignore` matches `^\.claude$` and R attempts `unlink(".claude", recursive = TRUE)`; contents are removed but the empty parent directory survives in the tarball. `R CMD check` then flags it as a hidden entry.
+
+Why we accept it: immor is internal-only (no CRAN release planned — see [`/CLAUDE.md`](/CLAUDE.md) "R-package skills → cran-extrachecks"). One informational `NOTE` alongside 0 errors, 0 warnings is fine. The alternative (moving `.claude/commands/` + `.claude/skills/` to a non-hidden `_claude/` and using a symlink from `.claude/`) adds config surgery that breaks the Claude Code default discovery convention.
+
+Reproducible workaround if a CRAN release ever becomes relevant: quit Positron / VSCode, run `xattr -cr .claude/`, then `devtools::check()` — the xattr will not be re-added by the OS while the IDE is closed and the note disappears.
+
 ---
 
 ## How to add to this roadmap
