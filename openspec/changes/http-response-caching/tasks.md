@@ -59,13 +59,13 @@
 - [x] 7.1 `air format .`.
 - [x] 7.2 `devtools::document()` + verify no unstaged changes to `man/` or `NAMESPACE`.
 - [x] 7.3 `devtools::test()` — full suite green (150+ tests).
-- [ ] 7.4 `devtools::check()` — 0 errors, 0 warnings; accept only the pre-existing `.claude` NOTE documented in `doc/roadmap.md`.
-- [ ] 7.5 Live smoke: two consecutive `immor_fetch()` calls in a fresh R session — first takes ~3 minutes, second returns in < 1 second with `Cache hit: N listings...` message. `immor_cache_db_path()` grows in size after the first call.
-- [ ] 7.6 Live smoke: `Sys.setenv(IMMOR_NO_CACHE = "1"); immor_fetch()` — kill-switch inform fires exactly once; no cache written.
+- [x] 7.4 `devtools::check()` — 0 errors, 0 warnings; accept only the pre-existing `.claude` NOTE documented in `doc/roadmap.md`.
+- [x] 7.5 Live smoke: two consecutive `immor_fetch()` calls in a fresh R session — first took 2 min 45 s, second returned in 119 ms with `Cache hit: 163 listings (cached 0s ago)` message.
+- [ ] 7.6 Live smoke: `Sys.setenv(IMMOR_NO_CACHE = "1"); immor_fetch()` — kill-switch inform fires exactly once on the DuckDB code path; no cache written. **Not yet verified on the final code** (an earlier session verified the equivalent on the pre-pivot code).
 
 ## 8. Ship
 
 - [ ] 8.1 User runs `fledge::bump_version()` — bumps `DESCRIPTION` and appends a fledge-authored `NEWS.md` section from commit messages. **Never edit `NEWS.md` manually.**
-- [ ] 8.2 Commit with `feat(cache): store immor_fetch() results in DuckDB cache` (per global commit conventions).
-- [ ] 8.3 Push to `f-http-response-caching` — PR #4 already open, will update in place.
+- [x] 8.2 Commit — shipped as multiple commits on `f-http-response-caching` (feat / refactor / fix / chore / docs prefixes on each per global conventions).
+- [x] 8.3 Push to `f-http-response-caching` — PR #4 open and up-to-date.
 - [ ] 8.4 On merge: run `/opsx:archive http-response-caching` to move the change to `openspec/changes/archive/` and apply deltas to `openspec/specs/`. This will create the new `openspec/specs/listings-cache/` capability spec.

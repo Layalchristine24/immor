@@ -401,7 +401,6 @@ Documented so you don't spend time proposing them:
 - **Filtering at the API layer.** [`query-construction`](/openspec/specs/query-construction/spec.md) is intentionally empty; filter after fetch via `dplyr::filter()`. This matches flatfox's actual behaviour (its public API ignores filter params) and keeps the contract with `blockr.immor` simple.
 - **Fuzzy deduplication.** Currently `method = "exact"` only. Fuzzy matching is on [roadmap.md](roadmap.md).
 - **A Shiny app.** The interactive UI lives in the companion package [`blockr.immor`](https://github.com/Layalchristine24/blockr.immor). immor is the data engine; it does not ship UI.
-- **Response caching.** Not currently implemented. `httr2::req_cache()` is on [roadmap.md](roadmap.md); until then, every `immor_fetch()` re-hits the network.
 
 ---
 

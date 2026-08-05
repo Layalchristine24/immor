@@ -146,7 +146,7 @@ immor is pre-1.0 and internal-only, so there is no external migration story. Seq
 1. Add `duckdb` and `DBI` to `Imports` in `DESCRIPTION`.
 2. Rewrite [`/R/cache.R`](/R/cache.R) with the DuckDB helpers.
 3. Wire the cache lookup + write into `immor_fetch()` in [`/R/fetch-all.R`](/R/fetch-all.R).
-4. Revert [`/R/http.R`](/R/http.R), [`/R/portal.R`](/R/portal.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), and [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) to their pre-change signatures.
+4. Keep [`/R/http.R`](/R/http.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), and [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) at their pre-change signatures — the DuckDB layer above `fetch_listings()` never needs a `cache` argument to leak down. [`/R/portal.R`](/R/portal.R) is unchanged because the existing `...` in the `fetch_listings()` generic absorbs any future extra args.
 5. Update [`/doc/design.md`](/doc/design.md) §3 to describe the DuckDB layer.
 6. Update [`/.github/CONTRIBUTING.md`](/.github/CONTRIBUTING.md) — new portals do NOT plumb `cache` through their signatures.
 7. User runs `fledge::bump_version()` at release time — never edit `NEWS.md` manually.

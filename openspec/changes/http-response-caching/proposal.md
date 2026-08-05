@@ -33,7 +33,7 @@ The pivot: cache the **parsed listings** in an on-disk DuckDB database keyed by 
 
 ## Impact
 
-- **Code touched:** [`/R/fetch-all.R`](/R/fetch-all.R) (cache lookup + write); new file [`/R/cache.R`](/R/cache.R) (all cache helpers). [`/R/http.R`](/R/http.R), [`/R/portal.R`](/R/portal.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), and [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) revert to their pre-change signatures — no `cache` argument leaks below `immor_fetch()`.
+- **Code touched:** [`/R/fetch-all.R`](/R/fetch-all.R) (cache lookup + write); new file [`/R/cache.R`](/R/cache.R) (all cache helpers). [`/R/http.R`](/R/http.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), and [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) keep their pre-change signatures — no `cache` argument leaks below `immor_fetch()`. [`/R/portal.R`](/R/portal.R) is unchanged (the `fetch_listings()` generic's existing `...` absorbs any extra args without needing a signature update).
 - **Public API:** three new exports (`immor_cache_dir()`, `immor_cache_db_path()`, `immor_cache_clear()`); `immor_fetch()` gains `cache = TRUE` and `max_age = 3600` arguments.
 - **Filesystem:** first use creates `tools::R_user_dir("immor", "cache")/immor.duckdb`. Documented as safe to delete at any time; `immor_cache_clear()` does the same in R.
 - **User messaging:** cache hits emit `cli::cli_alert_info()`; kill-switch and filesystem-fallback notices use `immor_cache_inform_once()` so they fire at most once per session per reason.
