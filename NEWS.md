@@ -1,8 +1,5 @@
 <!-- NEWS.md is maintained by https://fledge.cynkra.com, contributors should not edit this file -->
 
-- Add opt-in on-disk HTTP response caching via `httr2::req_cache()` in `immor_request()`. `immor_fetch()` gains `cache = TRUE` (default). New exports `immor_cache_dir()` and `immor_cache_clear()`. The `IMMOR_NO_CACHE` environment variable disables caching globally.
-
-
 # immor 0.0.0.9004 (2026-08-02)
 
 ## Chore

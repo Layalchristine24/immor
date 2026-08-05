@@ -43,7 +43,7 @@
 - [x] 6.2 Add a section "HTTP response caching" to `doc/design.md` describing the cache layer, the env var, and portal TTL conventions.
 - [x] 6.3 Remove the `### N1. HTTP response caching` block from `doc/roadmap.md` (item has shipped).
 - [x] 6.4 Add a bullet to `.github/CONTRIBUTING.md` requiring new portals to forward `cache` / `max_age` through `immor_request()`.
-- [x] 6.5 Add a `NEWS.md` bullet describing the cache and the `IMMOR_NO_CACHE` env var. Fledge will version it at release.
+- [x] 6.5 ~~Add a `NEWS.md` bullet~~ — **do NOT edit `NEWS.md` manually**; it is maintained by [fledge](https://fledge.cynkra.com) and only the user runs `fledge::bump_version()` at release time. Fledge derives the entry from commit messages, so the feat/fix/chore prefix on the commit is what matters.
 
 ## 7. Verification
 
@@ -56,7 +56,7 @@
 
 ## 8. Ship
 
-- [ ] 8.1 Bump `DESCRIPTION` Version to `0.0.0.9005` and update `NEWS.md` per fledge.
+- [ ] 8.1 User runs `fledge::bump_version()` — bumps `DESCRIPTION` and appends a fledge-authored `NEWS.md` section from commit messages. **Never edit `NEWS.md` manually.**
 - [ ] 8.2 Commit with `feat(http): add opt-in httr2::req_cache() to immor_request()` (per global commit conventions).
 - [ ] 8.3 Open PR from `f-http-response-caching` → `main`.
 - [ ] 8.4 On merge: run `/opsx:archive http-response-caching` to move the change to `openspec/changes/archive/` and apply deltas to `openspec/specs/`.

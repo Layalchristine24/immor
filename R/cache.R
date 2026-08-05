@@ -26,7 +26,7 @@ cache_state <- new.env(parent = emptyenv())
 #' immor_cache_dir()
 #' @export
 immor_cache_dir <- function() {
-  path <- tools::R_user_dir("immor", "cache")
+  path <- R_user_dir("immor", "cache")
   if (!dir.exists(path)) {
     dir.create(path, recursive = TRUE, showWarnings = FALSE)
   }
@@ -48,7 +48,7 @@ immor_cache_dir <- function() {
 #' }
 #' @export
 immor_cache_clear <- function() {
-  path <- tools::R_user_dir("immor", "cache")
+  path <- R_user_dir("immor", "cache")
   if (!dir.exists(path)) {
     cli::cli_alert_info("Cache directory does not exist yet: {.path {path}}.")
     return(invisible(path))
