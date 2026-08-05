@@ -166,6 +166,29 @@ Items we want but that are not the next unit of work. Reason for deferral is lis
 
 ---
 
+### D10. Stale-while-revalidate helpers for `blockr.immor`
+
+**What:** two small helpers on top of [`listings-cache`](/openspec/specs/listings-cache/spec.md) so `blockr.immor` can implement a "keep yesterday's data visible, refresh in the background on button click, never show a blank dashboard" UX.
+
+- `immor_cache_read_only(portals, max_pages, query)` — returns the cached tibble or `NULL`; never scrapes. Lets a Shiny app initialise its `reactiveVal(listings)` without ever blocking, and decide "show empty state" vs "trigger a background scrape" for a cold-start machine.
+- `immor_cache_info()` — returns a `tibble(cache_key, cached_at, n_rows)`. Lets the dashboard render "Updated 2 hours ago" without externally tracking timestamps, and survives R session restarts.
+
+**Why not now:** the priority is **making the current immor package robust** — get [`http-response-caching`](/openspec/changes/http-response-caching/) PR merged, tighten tests around the DuckDB layer, harden error paths, stabilise the eight capability specs — *before* growing new API surface for downstream consumers. `blockr.immor` can implement stale-while-revalidate today with `immor_fetch(max_age = Inf)` at load + `promises::future_promise(immor_fetch(max_age = 0))` at button click; the helpers above are polish, not blockers.
+
+**Design sketch:**
+- Both helpers live in [`/R/cache.R`](/R/cache.R) alongside `immor_cache_dir()` / `immor_cache_db_path()` / `immor_cache_clear()`.
+- `immor_cache_read_only()` is a thin wrapper around the internal `immor_cache_read(key, max_age = Inf)` that already exists — the trick is exposing it as public API with a stable signature.
+- `immor_cache_info()` is a `SELECT cache_key, MAX(cached_at) AS cached_at, COUNT(*) AS n_rows FROM immor_listings GROUP BY cache_key` on the DuckDB store.
+- Neither helper triggers a scrape; both are safe to call from anywhere in a Shiny reactive graph.
+
+**Unblocks / touched capabilities:** modifies [`listings-cache`](/openspec/specs/listings-cache/spec.md) with two ADDED requirements.
+
+**Dependencies:** none — only requires the DuckDB cache landed in `http-response-caching`.
+
+**Not addressing here** (also deferred until robustness work lands): `immor_fetch_async()` returning a `promises::promise` — nice one-liner in blockr but couples immor to async infra. Blockr can wrap `immor_fetch()` in `promises::future_promise()` itself.
+
+---
+
 ## ❌ Explicitly rejected
 
 Items we've decided against, so future proposals don't rediscover the same reasoning.
