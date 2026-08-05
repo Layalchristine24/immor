@@ -22,6 +22,7 @@ fetch_listings.immor_portal_flatfox <- function(
   portal,
   query,
   max_pages = 5L,
+  cache = TRUE,
   ...
 ) {
   all_listings <- list()
@@ -35,18 +36,22 @@ fetch_listings.immor_portal_flatfox <- function(
         offset = offset,
         limit = limit,
       ) |>
-      immor_request()
+      immor_request(cache = cache, max_age = 3600)
 
     resp <- httr2::req_perform(req)
     body <- httr2::resp_body_json(resp)
     results <- body$results %||% list()
 
-    if (length(results) == 0) break
+    if (length(results) == 0) {
+      break
+    }
 
     parsed <- purrr::map(results, \(x) parse_listing(portal, x))
     all_listings <- c(all_listings, parsed)
 
-    if (is.null(body$`next`)) break
+    if (is.null(body$`next`)) {
+      break
+    }
     offset <- offset + limit
   }
 

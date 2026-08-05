@@ -1,3 +1,10 @@
+# Isolate the whole test run from the real HTTP cache directory. Individual
+# tests that exercise cache behaviour override these with withr::local_envvar().
+Sys.setenv(
+  IMMOR_NO_CACHE = "1",
+  R_USER_CACHE_DIR = tempfile("immor-tests-")
+)
+
 mock_flatfox_listing <- function(
   pk = 12345,
   public_title = "Bahnhofstrasse 10, 8001 Zurich - CHF 1500 excl. utilities per month",

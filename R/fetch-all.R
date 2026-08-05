@@ -11,6 +11,13 @@
 #'   across portals.
 #' @param max_pages Maximum number of result pages to fetch
 #'   per portal.
+#' @param cache Whether to use the on-disk HTTP response cache. Defaults
+#'   to `TRUE`. Every portal method receives this argument via
+#'   [fetch_listings()] dispatch, and passes it through to
+#'   [immor_request()]. The `IMMOR_NO_CACHE` environment variable
+#'   (values `"1"`, `"true"`, `"yes"`, case-insensitive) overrides this
+#'   argument globally. See [immor_cache_dir()] and
+#'   [immor_cache_clear()].
 #'
 #' @return A tibble conforming to [immor_schema()].
 #'
@@ -18,13 +25,16 @@
 #' \dontrun{
 #' query <- immor_query()
 #' listings <- immor_fetch(query)
+#' # Fresh fetch, no cache:
+#' listings <- immor_fetch(query, cache = FALSE)
 #' }
 #' @export
 immor_fetch <- function(
   query,
   portals = NULL,
   deduplicate = TRUE,
-  max_pages = 5L
+  max_pages = 5L,
+  cache = TRUE
 ) {
   available <- immor_portals()
 
@@ -49,7 +59,7 @@ immor_fetch <- function(
     portal <- available[[name]]()
     cli::cli_progress_step("Scraping {.val {name}}")
     tryCatch(
-      fetch_listings(portal, query, max_pages = max_pages),
+      fetch_listings(portal, query, max_pages = max_pages, cache = cache),
       error = function(e) {
         cli::cli_warn(
           "Failed to fetch from {.val {name}}: {conditionMessage(e)}"

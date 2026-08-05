@@ -25,6 +25,7 @@ fetch_listings.immor_portal_weckaeby <- function(
   portal,
   query,
   max_pages = 5L,
+  cache = TRUE,
   ...
 ) {
   base_url <- portal$base_url
@@ -37,9 +38,11 @@ fetch_listings.immor_portal_weckaeby <- function(
 
   for (page in pages) {
     page_url <- paste0(base_url, page$path)
-    links <- weckaeby_fetch_links(page_url)
+    links <- weckaeby_fetch_links(page_url, cache = cache)
 
-    if (length(links) == 0) next
+    if (length(links) == 0) {
+      next
+    }
 
     cli::cli_inform(
       "Found {length(links)} listing{?s} on {.url {page_url}}."
@@ -48,7 +51,7 @@ fetch_listings.immor_portal_weckaeby <- function(
     for (link in links) {
       listing <- tryCatch(
         {
-          html <- weckaeby_fetch_detail(link)
+          html <- weckaeby_fetch_detail(link, cache = cache)
           raw <- list(
             html = html,
             transaction_type = page$type,
@@ -89,7 +92,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
   title <- html |>
     rvest::html_element(".title") |>
     rvest::html_text2()
-  if (is.na(title)) title <- NA_character_
+  if (is.na(title)) {
+    title <- NA_character_
+  }
 
   maps_link <- html |> rvest::html_element("a[href*='google.com/maps']")
   address_text <- if (!is.na(maps_link)) {
@@ -104,7 +109,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
     price_text <- weckaeby_detail_value(details, "Loyer")
   }
   price <- weckaeby_parse_price(price_text)
-  if (!is.na(price) && price == 0) price <- NA_real_
+  if (!is.na(price) && price == 0) {
+    price <- NA_real_
+  }
 
   rooms_text <- weckaeby_detail_value(details, "Nombre de pi")
   rooms <- if (!is.na(rooms_text)) {
@@ -204,9 +211,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
 
 # --- Internal helpers (no roxygen) -----------------------------------------
 
-weckaeby_fetch_links <- function(page_url) {
+weckaeby_fetch_links <- function(page_url, cache = TRUE) {
   req <- httr2::request(page_url) |>
-    immor_request(delay = 10)
+    immor_request(delay = 10, cache = cache, max_age = 3600)
 
   resp <- httr2::req_perform(req)
   html <- httr2::resp_body_html(resp)
@@ -226,22 +233,26 @@ weckaeby_fetch_links <- function(page_url) {
   links[keep]
 }
 
-weckaeby_fetch_detail <- function(detail_url) {
+weckaeby_fetch_detail <- function(detail_url, cache = TRUE) {
   req <- httr2::request(detail_url) |>
-    immor_request(delay = 10)
+    immor_request(delay = 10, cache = cache, max_age = 86400)
 
   resp <- httr2::req_perform(req)
   httr2::resp_body_html(resp)
 }
 
 weckaeby_parse_price <- function(text) {
-  if (is.null(text) || is.na(text)) return(NA_real_)
+  if (is.null(text) || is.na(text)) {
+    return(NA_real_)
+  }
   text <- trimws(text)
   if (grepl("sur demande|auf Anfrage|on request", text, ignore.case = TRUE)) {
     return(NA_real_)
   }
   num_str <- gsub("[^0-9]", "", text)
-  if (nchar(num_str) == 0) return(NA_real_)
+  if (nchar(num_str) == 0) {
+    return(NA_real_)
+  }
   as.numeric(num_str)
 }
 
@@ -272,7 +283,9 @@ weckaeby_extract_pk <- function(url) {
 
 weckaeby_parse_details_block <- function(html) {
   details_div <- html |> rvest::html_element("div.details")
-  if (is.na(details_div)) return(list())
+  if (is.na(details_div)) {
+    return(list())
+  }
 
   text <- rvest::html_text2(details_div)
   lines <- strsplit(text, "\n")[[1]]

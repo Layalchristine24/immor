@@ -4,7 +4,13 @@
 \alias{immor_fetch}
 \title{Fetch listings from multiple portals}
 \usage{
-immor_fetch(query, portals = NULL, deduplicate = TRUE, max_pages = 5L)
+immor_fetch(
+  query,
+  portals = NULL,
+  deduplicate = TRUE,
+  max_pages = 5L,
+  cache = TRUE
+)
 }
 \arguments{
 \item{query}{An \code{\link[=immor_query]{immor_query()}} object specifying search
@@ -18,6 +24,14 @@ across portals.}
 
 \item{max_pages}{Maximum number of result pages to fetch
 per portal.}
+
+\item{cache}{Whether to use the on-disk HTTP response cache. Defaults
+to \code{TRUE}. Every portal method receives this argument via
+\code{\link[=fetch_listings]{fetch_listings()}} dispatch, and passes it through to
+\code{\link[=immor_request]{immor_request()}}. The \code{IMMOR_NO_CACHE} environment variable
+(values \code{"1"}, \code{"true"}, \code{"yes"}, case-insensitive) overrides this
+argument globally. See \code{\link[=immor_cache_dir]{immor_cache_dir()}} and
+\code{\link[=immor_cache_clear]{immor_cache_clear()}}.}
 }
 \value{
 A tibble conforming to \code{\link[=immor_schema]{immor_schema()}}.
@@ -30,5 +44,7 @@ and returns a unified tibble of listings.
 \dontrun{
 query <- immor_query()
 listings <- immor_fetch(query)
+# Fresh fetch, no cache:
+listings <- immor_fetch(query, cache = FALSE)
 }
 }

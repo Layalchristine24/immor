@@ -28,7 +28,8 @@ Suggests:
     ellmer,
     httptest2,
     roxyglobals,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/roxyglobals/filename: globals.R
 Config/roxyglobals/unique: FALSE
 Config/testthat/edition: 3

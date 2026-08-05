@@ -77,7 +77,7 @@ Start with the umbrella, then descend as needed.
 | `query-construction` | `immor_query()` — no-argument S3 constructor consumed by every portal `fetch_listings` method. | [`/openspec/specs/query-construction/spec.md`](/openspec/specs/query-construction/spec.md) |
 | `listing-schema` | `immor_schema()` — 28-column canonical zero-row tibble. Common-denominator approach; missing portal fields become `NA`. | [`/openspec/specs/listing-schema/spec.md`](/openspec/specs/listing-schema/spec.md) |
 | `type-enforcement` | `ensure_type()` — `vctrs::vec_cast()` wrapper; `validate_listings()` at every portal's exit point. Fail fast, fail early, fail clear. | [`/openspec/specs/type-enforcement/spec.md`](/openspec/specs/type-enforcement/spec.md) |
-| `http-layer` | `immor_request()` — user-agent, rate limiting (default 1 req / 2 s per host), 3-attempt retry with exponential backoff. | [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md) |
+| `http-layer` | `immor_request()` — user-agent, rate limiting (default 1 req / 2 s per host), 3-attempt retry with exponential backoff, opt-in on-disk response cache. `immor_cache_dir()` / `immor_cache_clear()` expose the cache dir. `IMMOR_NO_CACHE` kill switch. | [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md) |
 | `portal-registry` | `new_portal()` + `immor_portals()` + `immor_portal()`; the `fetch_listings` / `parse_listing` S3 generics. | [`/openspec/specs/portal-registry/spec.md`](/openspec/specs/portal-registry/spec.md) |
 | `portal-flatfox` | REST-API scraper for `flatfox.ch/api/v1/public-listing/` — offset/limit pagination, `-published` ordering. | [`/openspec/specs/portal-flatfox/spec.md`](/openspec/specs/portal-flatfox/spec.md) |
 | `portal-weckaeby` | HTML scraper for `weck-aeby.ch` (CasaWP WordPress plugin) — two-stage archive → detail fetch, 10 s crawl delay. | [`/openspec/specs/portal-weckaeby/spec.md`](/openspec/specs/portal-weckaeby/spec.md) |
@@ -138,12 +138,14 @@ See [`/openspec/specs/type-enforcement/spec.md`](/openspec/specs/type-enforcemen
 
 ### 3. HTTP policy is centralised
 
-`immor_request()` is the single decorator that applies user-agent, per-host throttling, and retry-with-backoff. Portal code never calls `httr2::req_user_agent()`, `httr2::req_throttle()`, or `httr2::req_retry()` directly. See [`/R/http.R`](/R/http.R) — the function is nine lines.
+`immor_request()` is the single decorator that applies user-agent, per-host throttling, retry-with-backoff, and — opt-in — on-disk response caching. Portal code never calls `httr2::req_user_agent()`, `httr2::req_throttle()`, `httr2::req_retry()`, or `httr2::req_cache()` directly. See [`/R/http.R`](/R/http.R).
 
 ```
                     ┌──────────────────────────────┐
                     │      immor_request(req)      │
                     ├──────────────────────────────┤
+                    │ req_cache(path = cache_dir,  │  ← opt-in, before throttle
+                    │           max_age = ttl)     │    so hits skip network
                     │ req_user_agent(              │
                     │   "immor/{ver} (R package)") │
                     │ req_throttle(rate = 1/delay) │
@@ -156,11 +158,24 @@ See [`/openspec/specs/type-enforcement/spec.md`](/openspec/specs/type-enforcemen
         ▼                          ▼                          ▼
   portal-flatfox            portal-weckaeby              future portal
   delay = 2 (default)       delay = 10                   delay ≥ 2
+  max_age = 3600            archive: 3600, detail: 86400  portal picks TTL
 ```
 
-**Why this matters:** a future policy change (new UA suffix, longer default delay, retry on new status codes) touches one function. `req_retry(max_tries = 3)` is not scattered across every portal.
+**Why this matters:** a future policy change (new UA suffix, longer default delay, retry on new status codes, cache eviction rule) touches one function. `req_retry(max_tries = 3)` is not scattered across every portal.
 
 **One rule:** per-portal delay overrides may only **increase** the throttle. Weck-aeby's `robots.txt` mandates a 10-second crawl delay; `portal_weckaeby()` respects that by passing `delay = 10`. Nothing shortens the default `delay = 2`.
+
+#### HTTP response caching
+
+`immor_fetch(cache = TRUE)` (the default) routes every request through `httr2::req_cache()` with a per-endpoint `max_age`. The cache directory is `tools::R_user_dir("immor", "cache")` — safe to delete at any time; `immor_cache_clear()` does the same in R.
+
+Opt-outs:
+
+- Per call: `immor_fetch(query, cache = FALSE)`.
+- Globally: `Sys.setenv(IMMOR_NO_CACHE = "1")` (also `"true"` / `"yes"`, case-insensitive). The kill switch emits `cli::cli_inform()` exactly once per session so users know why cache flags appear ineffective.
+- Fail-open: any filesystem error on the cache layer falls through to a live request with a one-off `cli::cli_warn()`. Correctness beats speed.
+
+TTL is chosen at the portal call site, not by `immor_request()`. Portals classify their own requests — archive/index pages take shorter TTLs than detail pages — so `immor_request()` stays a policy decorator, not a policy source.
 
 See [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md).
 

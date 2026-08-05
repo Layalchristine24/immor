@@ -28,25 +28,7 @@ Every entry lists (a) what, (b) why, (c) what would unblock it or what it depend
 
 Items that are the most likely next unit of work. Order is rough priority, not strict sequence.
 
-### N1. HTTP response caching
-
-**What:** wire `httr2::req_cache()` into [`immor_request()`](/R/http.R) so repeated `immor_fetch()` calls within a session don't hammer the network.
-
-**Why:** interactive development (RStudio / Positron) re-runs `immor_fetch()` frequently. Every call today re-fetches ~33 k flatfox listings + walks weck-aeby's 20 detail pages. That's slow and impolite.
-
-**Design sketch:**
-- Cache directory: `tools::R_user_dir("immor", "cache")` (respects OS conventions).
-- Cache key: request URL + relevant headers.
-- TTL: portal-configurable. Sensible default: 1 hour for listing archives, 24 hours for detail pages.
-- Opt-out via `immor_fetch(cache = FALSE)` and env var `IMMOR_NO_CACHE=1`.
-
-**Unblocks / touched capabilities:** [`http-layer`](/openspec/specs/http-layer/spec.md) gains cache requirements. [`multi-portal-fetch`](/openspec/specs/multi-portal-fetch/spec.md) gains a `cache` argument.
-
-**Dependencies:** none new — `httr2::req_cache()` is already available.
-
----
-
-### N2. Fuzzy deduplication
+### N1. Fuzzy deduplication
 
 **What:** extend [`immor_deduplicate()`](/R/deduplicate.R) with `method = "fuzzy"` — currently only `"exact"` is supported.
 
@@ -65,7 +47,7 @@ Items that are the most likely next unit of work. Order is rough priority, not s
 
 ---
 
-### N3. `blockr.immor` blocks polish
+### N2. `blockr.immor` blocks polish
 
 **What:** improve the three blockr blocks in [`blockr.immor`](https://github.com/Layalchristine24/blockr.immor) — source, dedup, map — based on real-user friction.
 
@@ -172,7 +154,7 @@ Items we want but that are not the next unit of work. Reason for deferral is lis
 
 **What:** hit the deduplication edge cases (numeric vs character coercion, `NA` handling in composite keys) and the `ensure_type()` failure paths.
 
-**Why not now:** current coverage is decent (60+ tests) and the code is stable. Would prioritise if we made structural changes to [`deduplication`](/openspec/specs/deduplication/spec.md) or [`type-enforcement`](/openspec/specs/type-enforcement/spec.md) — which N2 (fuzzy dedup) will trigger anyway.
+**Why not now:** current coverage is decent (60+ tests) and the code is stable. Would prioritise if we made structural changes to [`deduplication`](/openspec/specs/deduplication/spec.md) or [`type-enforcement`](/openspec/specs/type-enforcement/spec.md) — which N1 (fuzzy dedup) will trigger anyway.
 
 ---
 
@@ -180,7 +162,7 @@ Items we want but that are not the next unit of work. Reason for deferral is lis
 
 **What:** a blockr block that pairs listings by fuzzy-dedup key and shows side-by-side price / rooms differences across portals.
 
-**Why not now:** N2 (fuzzy dedup) must land first. Once fuzzy dedup ships with a `dedup_confidence` column, this block becomes a straightforward render.
+**Why not now:** N1 (fuzzy dedup) must land first. Once fuzzy dedup ships with a `dedup_confidence` column, this block becomes a straightforward render.
 
 ---
 

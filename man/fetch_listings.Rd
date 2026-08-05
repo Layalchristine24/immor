@@ -4,7 +4,7 @@
 \alias{fetch_listings}
 \title{Fetch listings from a portal}
 \usage{
-fetch_listings(portal, query, max_pages = 5L, ...)
+fetch_listings(portal, query, max_pages = 5L, cache = TRUE, ...)
 }
 \arguments{
 \item{portal}{An \code{immor_portal} object.}
@@ -12,6 +12,10 @@ fetch_listings(portal, query, max_pages = 5L, ...)
 \item{query}{An \code{\link[=immor_query]{immor_query()}} object.}
 
 \item{max_pages}{Maximum number of pages to fetch.}
+
+\item{cache}{Whether to use the on-disk HTTP response cache. Forwarded
+by \code{\link[=immor_fetch]{immor_fetch()}} to every method and passed through to
+\code{\link[=immor_request]{immor_request()}}.}
 
 \item{...}{Additional arguments passed to methods.}
 }
