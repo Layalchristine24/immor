@@ -125,8 +125,8 @@ immor_cache_key <- function(portals, max_pages, query) {
 # concurrent read sessions don't collide; caller is responsible for
 # disconnecting.
 immor_cache_connect <- function(read_only = FALSE) {
-  duckdb::dbConnect(
-    duckdb::duckdb(),
+  dbConnect(
+    duckdb(),
     dbdir = immor_cache_db_path(),
     read_only = read_only
   )
@@ -147,14 +147,14 @@ immor_cache_read <- function(key, max_age) {
   if (is.null(con)) {
     return(NULL)
   }
-  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
-  if (!DBI::dbExistsTable(con, "immor_listings")) {
+  if (!dbExistsTable(con, "immor_listings")) {
     return(NULL)
   }
 
   meta <- tryCatch(
-    DBI::dbGetQuery(
+    dbGetQuery(
       con,
       paste(
         "SELECT DISTINCT cache_key, cached_at",
@@ -177,7 +177,7 @@ immor_cache_read <- function(key, max_age) {
   }
 
   rows <- tryCatch(
-    DBI::dbGetQuery(
+    dbGetQuery(
       con,
       paste(
         "SELECT * EXCLUDE (cache_key, cached_at)",
@@ -219,7 +219,7 @@ immor_cache_write <- function(key, listings) {
   if (is.null(con)) {
     return(invisible())
   }
-  on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+  on.exit(dbDisconnect(con, shutdown = TRUE), add = TRUE)
 
   augmented <- dplyr::mutate(
     listings,
@@ -229,11 +229,11 @@ immor_cache_write <- function(key, listings) {
   )
 
   tryCatch(
-    DBI::dbWriteTable(
+    dbWriteTable(
       con,
       "immor_listings",
       augmented,
-      append = DBI::dbExistsTable(con, "immor_listings")
+      append = dbExistsTable(con, "immor_listings")
     ),
     error = function(e) {
       immor_cache_inform_once(
