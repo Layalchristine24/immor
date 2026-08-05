@@ -20,11 +20,12 @@ When asked *"how do I…"*, *"how does X work"*, *"what's the contract for…"*,
 
 | Capability | What it covers |
 |---|---|
-| [`multi-portal-fetch`](openspec/specs/multi-portal-fetch/spec.md) | **Umbrella — start here.** `immor_fetch(query, portals, deduplicate, max_pages)` orchestrates one or more portal scrapers, aggregates results into a single tibble, and optionally deduplicates. |
+| [`multi-portal-fetch`](openspec/specs/multi-portal-fetch/spec.md) | **Umbrella — start here.** `immor_fetch(query, portals, deduplicate, max_pages, cache, max_age)` orchestrates one or more portal scrapers, aggregates results into a single tibble, optionally deduplicates, and consults [`listings-cache`](openspec/specs/listings-cache/spec.md) before dispatching to portals. |
 | [`query-construction`](openspec/specs/query-construction/spec.md) | `immor_query()` — the no-argument S3 constructor consumed by every portal `fetch_listings` method. |
 | [`listing-schema`](openspec/specs/listing-schema/spec.md) | `immor_schema()` — the 28-column canonical tibble every portal must produce. Common-denominator approach; missing portal fields become `NA`. |
 | [`type-enforcement`](openspec/specs/type-enforcement/spec.md) | `ensure_type()` — the `vctrs::vec_cast()` wrapper used by `validate_listings()` at each portal's exit point. Fail fast, fail early, fail clear. |
-| [`http-layer`](openspec/specs/http-layer/spec.md) | `immor_request()` — user-agent, rate limiting (default 1 req/2 s), 3 retries with exponential backoff. All portal HTTP goes through this. |
+| [`http-layer`](openspec/specs/http-layer/spec.md) | `immor_request()` — user-agent, rate limiting (default 1 req/2 s), 3 retries with exponential backoff. All portal HTTP goes through this. **No caching lives here** — caching sits above `fetch_listings()` dispatch in [`listings-cache`](openspec/specs/listings-cache/spec.md). |
+| [`listings-cache`](openspec/specs/listings-cache/spec.md) | On-disk DuckDB cache for `immor_fetch()` results, keyed by `(portals, max_pages, query)`. `immor_cache_dir()` / `immor_cache_db_path()` / `immor_cache_clear()` helpers. `IMMOR_NO_CACHE` env-var kill switch. Fail-open on DB errors. Every future portal inherits caching automatically. |
 | [`portal-registry`](openspec/specs/portal-registry/spec.md) | `new_portal()` + `immor_portals()` + `immor_portal()`; the `fetch_listings()` / `parse_listing()` S3 generics that portals dispatch on. |
 | [`portal-flatfox`](openspec/specs/portal-flatfox/spec.md) | REST-API scraper for `flatfox.ch/api/v1/public-listing/` — offset/limit pagination, `-published` ordering, ~33 k listings, API ignores all filter params. |
 | [`portal-weckaeby`](openspec/specs/portal-weckaeby/spec.md) | HTML scraper for `weck-aeby.ch` (CasaWP WordPress plugin) — two-stage archive → detail fetch, 10 s crawl delay, ~4 buy + ~15 rent. |
