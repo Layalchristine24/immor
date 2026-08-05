@@ -4,24 +4,14 @@
 \alias{immor_request}
 \title{Decorate an httr2 request with the package's shared policies}
 \usage{
-immor_request(req, delay = 2, cache = FALSE, max_age = Inf)
+immor_request(req, delay = 2)
 }
 \arguments{
 \item{req}{An \code{\link[httr2:request]{httr2::request()}} object.}
 
 \item{delay}{Per-host delay in seconds enforced via
-\code{\link[httr2:req_throttle]{httr2::req_throttle()}}. The default of \code{2} matches the
-package-wide floor; callers MAY only increase it (weck-aeby passes
-\code{10}).}
-
-\item{cache}{Logical. When \code{TRUE}, an \code{\link[httr2:req_cache]{httr2::req_cache()}} decorator
-is applied before throttle and retry so cache hits skip both the
-throttle wait and the network. Defaults to \code{FALSE}; portal fetch
-methods pass through their own \code{cache} argument.}
-
-\item{max_age}{TTL in seconds forwarded to \code{\link[httr2:req_cache]{httr2::req_cache()}}.
-Ignored when \code{cache = FALSE}. Defaults to \code{Inf} (never expires from
-TTL alone; evictable via \code{\link[=immor_cache_clear]{immor_cache_clear()}} or manual delete).}
+\code{\link[httr2:req_throttle]{httr2::req_throttle()}}. Defaults to \code{2}; callers MAY only
+increase it (weck-aeby passes \code{10}).}
 }
 \value{
 A decorated \code{\link[httr2:request]{httr2::request()}} ready for
@@ -30,33 +20,23 @@ A decorated \code{\link[httr2:request]{httr2::request()}} ready for
 \description{
 Every outbound HTTP request made by an immor portal SHALL be piped
 through \code{immor_request()} so that user-agent, per-host throttling,
-retry policy, and (optionally) on-disk response caching apply
-uniformly. Portals never call \code{httr2::req_user_agent()},
-\code{httr2::req_throttle()}, \code{httr2::req_retry()}, or
-\code{httr2::req_cache()} directly.
+and retry-with-backoff apply uniformly. Portals never call
+\code{httr2::req_user_agent()}, \code{httr2::req_throttle()}, or
+\code{httr2::req_retry()} directly.
 }
 \details{
-The \code{IMMOR_NO_CACHE} environment variable is a global kill switch.
-Any truthy value (\code{"1"}, \code{"true"}, \code{"yes"}, case-insensitive) forces
-the cache decorator off regardless of the \code{cache} argument. A
-\code{cli::cli_inform()} fires exactly once per session on the first
-overridden call so the user understands why cache flags appear
-ineffective.
-
-On filesystem errors (permission denied, disk full, corrupt cache
-entry) the cache decorator is dropped and the request falls through
-to a live network call, with a one-off \code{cli::cli_warn()}. The package
-fails open on the cache layer — correctness beats speed.
+Response caching lives at the \code{\link[=immor_fetch]{immor_fetch()}} umbrella level, not
+here — see \code{\link[=immor_cache_dir]{immor_cache_dir()}}.
 }
 \examples{
 \dontrun{
 httr2::request("https://flatfox.ch/api/v1/public-listing/") |>
-  immor_request(cache = TRUE, max_age = 3600) |>
+  immor_request() |>
   httr2::req_perform()
 }
 }
 \seealso{
-\code{\link[=immor_cache_dir]{immor_cache_dir()}}, \code{\link[=immor_cache_clear]{immor_cache_clear()}},
-\code{\link[httr2:req_cache]{httr2::req_cache()}}.
+\code{\link[httr2:req_user_agent]{httr2::req_user_agent()}}, \code{\link[httr2:req_throttle]{httr2::req_throttle()}},
+\code{\link[httr2:req_retry]{httr2::req_retry()}}, \code{\link[=immor_cache_dir]{immor_cache_dir()}}.
 }
 \keyword{internal}

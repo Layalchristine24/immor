@@ -22,7 +22,6 @@ fetch_listings.immor_portal_flatfox <- function(
   portal,
   query,
   max_pages = 5L,
-  cache = TRUE,
   ...
 ) {
   all_listings <- list()
@@ -36,7 +35,7 @@ fetch_listings.immor_portal_flatfox <- function(
         offset = offset,
         limit = limit,
       ) |>
-      immor_request(cache = cache, max_age = 3600)
+      immor_request()
 
     resp <- httr2::req_perform(req)
     body <- httr2::resp_body_json(resp)

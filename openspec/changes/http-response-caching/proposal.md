@@ -1,35 +1,42 @@
 ## Why
 
-Interactive development in RStudio / Positron re-runs `immor_fetch()` frequently. Every invocation today re-fetches all ~33 k flatfox listings and walks every weck-aeby detail page under a mandated 10 s crawl delay. That is slow for the user and impolite toward the portals. Caching successful HTTP responses on disk turns repeated calls within a reasonable window into local reads while keeping an explicit opt-out for CI, fresh-data runs, and tests.
+Interactive development in RStudio / Positron re-runs `immor_fetch()` frequently. Every invocation today re-fetches all ~33 k flatfox listings and walks every weck-aeby detail page under a mandated 10 s crawl delay. That is slow for the user and impolite toward the portals.
 
-The design must also scale to the deferred roadmap: [D1](/doc/roadmap.md) (five Swiss portals blocked today, some serving > 2 M visits/mo if ever unblocked) and [D2](/doc/roadmap.md) (~200 CasaWP-based agency sites). Both grow the *number of hosts and requests*, not the shape of `immor_request()`. Wiring the cache at the shared HTTP layer means each new portal inherits caching for free.
+An earlier draft of this change proposed wiring `httr2::req_cache()` into the shared HTTP layer. Live probing revealed that neither current portal advertises the headers `httr2::req_cache()` needs to persist a response (flatfox sends only `Cache-Control: private`; weck-aeby sends no caching headers at all). `httr2::req_cache()` is a well-behaved HTTP client: it will not cache what the server does not mark cacheable, and it does **not** treat `max_age` as a client-side "cache anyway" override. The plumbing worked as coded — it just did nothing on the real endpoints. See design.md, Decision 1 for the diagnosis.
+
+The pivot: cache the **parsed listings** in an on-disk DuckDB database keyed by the `(portals, max_pages, query)` shape. Repeat calls with the same shape return the cached rows without touching the network. The mechanism is portal-agnostic — every future portal ([D1](/doc/roadmap.md) and [D2](/doc/roadmap.md)) inherits it automatically because caching lives above `fetch_listings()` dispatch.
 
 ## What Changes
 
-- Extend [`immor_request()`](/R/http.R) with a `cache` argument (opt-in) and a `max_age` argument (TTL in seconds) that route the request through `httr2::req_cache()` before throttle and retry decorators. Caching lives at the shared HTTP layer, so every current and future portal — including all D1 and D2 additions — inherits it uniformly.
-- Add an `immor_cache_dir()` helper returning `tools::R_user_dir("immor", "cache")` (created lazily). Provide `immor_cache_clear()` for programmatic purging alongside "delete the directory" as the documented manual path.
-- Honour an `IMMOR_NO_CACHE` env var: any truthy value (`"1"`, `"true"`, `"yes"`, case-insensitive) disables caching globally regardless of per-call arguments. Consistent with the `DO_NOT_TRACK` idiom already documented in [`/CLAUDE.md`](/CLAUDE.md).
-- Add a `cache` argument to `immor_fetch()` (default `TRUE`) that is forwarded via `fetch_listings()` S3 dispatch. The forwarding path is portal-agnostic — `immor_fetch()` contains no per-portal branching, so adding portals under [`portal-registry`](/openspec/specs/portal-registry/spec.md) requires no changes to the umbrella entry point.
-- Portal fetch methods (`portal-flatfox`, `portal-weckaeby`, and any future portal) accept an internal `cache` parameter and pass it through to every `immor_request()` call, applying per-endpoint TTL as appropriate (archive vs. detail).
-- No new package dependency — `httr2::req_cache()` ships in `httr2 (>= 1.0.0)`, which is already in `Imports`.
+- Add `cache` (default `TRUE`) and `max_age` (default `3600` seconds) arguments to `immor_fetch()`.
+- Cache each successful fetch as rows in a DuckDB table `immor_listings` inside `tools::R_user_dir("immor", "cache")`. Table adds two prefix columns — `cache_key` and `cached_at` — over the 28-column [`listing-schema`](/openspec/specs/listing-schema/spec.md).
+- On hit within `max_age`, return the cached rows via a `SELECT * EXCLUDE (cache_key, cached_at)` query.
+- Cache key: `rlang::hash(list(sort(portals), as.integer(max_pages), unclass(query)))`.
+- Honour an `IMMOR_NO_CACHE` env var (values `"1"`, `"true"`, `"yes"`, case-insensitive) as a global kill switch, mirroring the `DO_NOT_TRACK` idiom already documented in [`/CLAUDE.md`](/CLAUDE.md).
+- Introduce three exported helpers:
+  - `immor_cache_dir()` — returns the cache directory (created lazily).
+  - `immor_cache_db_path()` — returns the DuckDB file path inside that directory.
+  - `immor_cache_clear()` — deletes the DuckDB file (and any `.wal` sidecar).
+- `immor_request()`, portal `fetch_listings.*()` methods, and the `fetch_listings()` generic keep their pre-change signatures — the [`http-layer`](/openspec/specs/http-layer/spec.md) capability is untouched. Caching happens strictly above `fetch_listings()` dispatch, so **new portals ([D1](/doc/roadmap.md), [D2](/doc/roadmap.md)) inherit caching without any change to their code**.
+- Fail-open on cache errors: any DuckDB read or write failure emits a one-off `cli::cli_warn()` and continues to a live scrape.
+- Add `duckdb` and `DBI` to `Imports`. No changes to `httr2`.
 
 ## Capabilities
 
 ### New Capabilities
 
-<!-- none -->
+- `listings-cache`: on-disk DuckDB store persisting `immor_fetch()` results, with `immor_cache_dir()` / `immor_cache_db_path()` / `immor_cache_clear()` helpers, the `IMMOR_NO_CACHE` kill switch, and fail-open error handling.
 
 ### Modified Capabilities
 
-- `http-layer`: `immor_request()` gains an opt-in disk cache layered before throttle and retry, a documented cache-directory contract, and the `IMMOR_NO_CACHE` env-var kill switch.
-- `multi-portal-fetch`: `immor_fetch()` gains a `cache` argument that is forwarded through `fetch_listings()` dispatch to every portal method uniformly.
+- `multi-portal-fetch`: `immor_fetch()` gains `cache` and `max_age` arguments; consults [`listings-cache`](/openspec/specs/listings-cache/spec.md) before dispatching to portals, and writes each successful non-empty result back.
 
 ## Impact
 
-- **Code touched:** [`/R/http.R`](/R/http.R), [`/R/fetch.R`](/R/fetch.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R). New file `/R/cache.R` for `immor_cache_dir()`, `immor_cache_clear()`, and the env-var check.
-- **Public API:** `immor_fetch()` gains `cache = TRUE`; new exports `immor_cache_dir()` and `immor_cache_clear()`. `immor_request()` gains `cache = FALSE, max_age = Inf` — internal, but S3 dispatch reaches it.
-- **Filesystem:** first use creates `tools::R_user_dir("immor", "cache")`. Documented as safe to delete at any time; `immor_cache_clear()` does the same in R.
-- **User messaging:** cache hits and misses use `cli::cli_alert_info()` at verbose levels; header emission stays consistent with the rest of the package (`cli_abort` / `cli_warn` / `cli_inform`).
-- **Documentation:** update [`/doc/design.md`](/doc/design.md) once landed; move the N1 entry out of [`/doc/roadmap.md`](/doc/roadmap.md) into the changelog. Add a paragraph to [`.github/CONTRIBUTING.md`](/.github/CONTRIBUTING.md) requiring new portals to opt into the cache via `immor_request()`.
-- **Dependencies:** none new. Verify `DESCRIPTION` pins `httr2 (>= 1.0.0)`.
-- **Tests:** new tests under [`/tests/testthat/`](/tests/testthat/) redirect the cache directory via `withr::local_envvar()` + `withr::local_tempdir()` per testthat 3 conventions. Cover: cache hit skips network, TTL expiry re-fetches, `IMMOR_NO_CACHE=1` disables, `cache = FALSE` disables per-call.
+- **Code touched:** [`/R/fetch-all.R`](/R/fetch-all.R) (cache lookup + write); new file [`/R/cache.R`](/R/cache.R) (all cache helpers). [`/R/http.R`](/R/http.R), [`/R/portal.R`](/R/portal.R), [`/R/portal-flatfox.R`](/R/portal-flatfox.R), and [`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) revert to their pre-change signatures — no `cache` argument leaks below `immor_fetch()`.
+- **Public API:** three new exports (`immor_cache_dir()`, `immor_cache_db_path()`, `immor_cache_clear()`); `immor_fetch()` gains `cache = TRUE` and `max_age = 3600` arguments.
+- **Filesystem:** first use creates `tools::R_user_dir("immor", "cache")/immor.duckdb`. Documented as safe to delete at any time; `immor_cache_clear()` does the same in R.
+- **User messaging:** cache hits emit `cli::cli_alert_info()`; kill-switch and filesystem-fallback notices use `immor_cache_inform_once()` so they fire at most once per session per reason.
+- **Documentation:** [`/doc/design.md`](/doc/design.md) §3 is rewritten to describe the DuckDB cache layer; [`/doc/roadmap.md`](/doc/roadmap.md) N1 removed; [`/.github/CONTRIBUTING.md`](/.github/CONTRIBUTING.md) reverts to the pre-cache HTTP rule (new portals do NOT need to plumb `cache` through their signatures).
+- **Dependencies:** `duckdb` and `DBI` added to `Imports`. Both are widely used, cross-platform R packages.
+- **Tests:** new tests under [`/tests/testthat/`](/tests/testthat/) redirect `R_USER_CACHE_DIR` via `withr::local_envvar()` so the real user cache is untouched. Cover: helper round-trips (write → read), stale expiry, kill switch, per-portal error isolation, cache-key stability across portal-order permutations.

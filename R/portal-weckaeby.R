@@ -25,7 +25,6 @@ fetch_listings.immor_portal_weckaeby <- function(
   portal,
   query,
   max_pages = 5L,
-  cache = TRUE,
   ...
 ) {
   base_url <- portal$base_url
@@ -38,7 +37,7 @@ fetch_listings.immor_portal_weckaeby <- function(
 
   for (page in pages) {
     page_url <- paste0(base_url, page$path)
-    links <- weckaeby_fetch_links(page_url, cache = cache)
+    links <- weckaeby_fetch_links(page_url)
 
     if (length(links) == 0) {
       next
@@ -51,7 +50,7 @@ fetch_listings.immor_portal_weckaeby <- function(
     for (link in links) {
       listing <- tryCatch(
         {
-          html <- weckaeby_fetch_detail(link, cache = cache)
+          html <- weckaeby_fetch_detail(link)
           raw <- list(
             html = html,
             transaction_type = page$type,
@@ -211,9 +210,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
 
 # --- Internal helpers (no roxygen) -----------------------------------------
 
-weckaeby_fetch_links <- function(page_url, cache = TRUE) {
+weckaeby_fetch_links <- function(page_url) {
   req <- httr2::request(page_url) |>
-    immor_request(delay = 10, cache = cache, max_age = 3600)
+    immor_request(delay = 10)
 
   resp <- httr2::req_perform(req)
   html <- httr2::resp_body_html(resp)
@@ -233,9 +232,9 @@ weckaeby_fetch_links <- function(page_url, cache = TRUE) {
   links[keep]
 }
 
-weckaeby_fetch_detail <- function(detail_url, cache = TRUE) {
+weckaeby_fetch_detail <- function(detail_url) {
   req <- httr2::request(detail_url) |>
-    immor_request(delay = 10, cache = cache, max_age = 86400)
+    immor_request(delay = 10)
 
   resp <- httr2::req_perform(req)
   httr2::resp_body_html(resp)

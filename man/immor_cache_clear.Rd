@@ -2,16 +2,16 @@
 % Please edit documentation in R/cache.R
 \name{immor_cache_clear}
 \alias{immor_cache_clear}
-\title{Purge the on-disk HTTP cache}
+\title{Purge the on-disk cache}
 \usage{
 immor_cache_clear()
 }
 \value{
-The path to the cache directory, invisibly.
+The path to the removed DuckDB file, invisibly.
 }
 \description{
-Deletes every entry inside \code{\link[=immor_cache_dir]{immor_cache_dir()}} without removing the
-directory itself. Safe to call when no cache has been written yet.
+Deletes the DuckDB file so subsequent \code{\link[=immor_fetch]{immor_fetch()}} calls scrape
+fresh data. Safe to call when no cache has been written yet.
 }
 \examples{
 \dontrun{
@@ -19,5 +19,5 @@ immor_cache_clear()
 }
 }
 \seealso{
-\code{\link[=immor_cache_dir]{immor_cache_dir()}} for the directory path.
+\code{\link[=immor_cache_dir]{immor_cache_dir()}}, \code{\link[=immor_cache_db_path]{immor_cache_db_path()}}.
 }

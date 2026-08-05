@@ -2,13 +2,13 @@
 
 ### Requirement: Umbrella entry point
 
-The package SHALL expose `immor_fetch(query, portals = NULL, deduplicate = TRUE, max_pages = 5L, cache = TRUE)` as the single public entry point for aggregating listings across one or more portals.
+The package SHALL expose `immor_fetch(query, portals = NULL, deduplicate = TRUE, max_pages = 5L, cache = TRUE, max_age = 3600)` as the single public entry point for aggregating listings across one or more portals.
 
 #### Scenario: Default invocation fetches every registered portal
 
 - **WHEN** a caller invokes `immor_fetch(immor_query())` with `portals = NULL`
 - **THEN** the function SHALL iterate over every portal in `immor_portals()` in registration order
-- **AND** SHALL inform the user via `cli::cli_inform()` how many portals will be scraped and their names
+- **AND** SHALL inform the user via `cli::cli_inform()` how many portals will be scraped and their names — **unless** a cache hit short-circuits the fetch (in which case only the cache-hit `cli_alert_info()` fires)
 
 #### Scenario: Explicit portal subset
 
@@ -16,36 +16,52 @@ The package SHALL expose `immor_fetch(query, portals = NULL, deduplicate = TRUE,
 - **THEN** only the requested portals SHALL be fetched
 - **AND** portals not in `immor_portals()` SHALL trigger a `cli::cli_abort()` naming the unknown portal(s) and listing the available portals
 
-#### Scenario: Cache flag defaults to TRUE
+#### Scenario: Cache flag defaults to TRUE and consults the listings-cache
 
 - **WHEN** the caller does not pass an explicit `cache` argument
 - **THEN** `immor_fetch()` SHALL behave as if `cache = TRUE` was passed
-- **AND** the choice SHALL be documented at the `?immor_fetch` help page along with `cache = FALSE` and the `IMMOR_NO_CACHE` env-var opt-out
+- **AND** it SHALL consult [`listings-cache`](/openspec/specs/listings-cache/spec.md) via `immor_cache_read()` before dispatching to any portal
+- **AND** SHALL write the deduplicated result back via `immor_cache_write()` on completion, unless the result is empty or the kill switch is engaged
+
+#### Scenario: max_age controls entry freshness
+
+- **WHEN** the caller passes `max_age = N`
+- **THEN** `immor_fetch()` SHALL treat any cached entry younger than `N` seconds as fresh
+- **AND** entries older than `N` seconds SHALL be ignored and a live scrape SHALL run
+- **AND** `max_age = Inf` accepts any cached entry regardless of age
+- **AND** `max_age = 0` forces a re-fetch while still writing the fresh result to the cache
 
 ## ADDED Requirements
 
-### Requirement: Cache forwarding is portal-agnostic
+### Requirement: Cache lookup precedes portal dispatch
 
-`immor_fetch()` SHALL forward its `cache` argument to every portal's `fetch_listings()` method via the S3 generic signature, with no per-portal branching inside `immor_fetch()`.
+`immor_fetch()` SHALL consult the [`listings-cache`](/openspec/specs/listings-cache/spec.md) BEFORE dispatching to any portal's `fetch_listings()` method.
 
-#### Scenario: Cache argument reaches every portal method
+#### Scenario: Cache hit skips all portals
 
-- **WHEN** `immor_fetch(query, cache = TRUE)` is called
-- **THEN** each dispatched `fetch_listings.immor_portal_<name>(portal, query, max_pages, cache)` call SHALL receive `cache = TRUE`
-- **AND** each dispatched call SHALL receive `cache = FALSE` when the umbrella call passes `cache = FALSE`
+- **WHEN** `immor_cache_read(key, max_age)` returns a non-null tibble
+- **THEN** `immor_fetch()` SHALL return that tibble immediately
+- **AND** SHALL NOT call `fetch_listings()` on any portal
+- **AND** SHALL NOT emit the "Fetching from N portals" `cli_inform()` — only the cache-hit `cli_alert_info()` from `immor_cache_read()`
 
-#### Scenario: Adding a new portal requires no fetch-layer changes
+#### Scenario: Cache miss dispatches to portals
 
-- **WHEN** a new portal is registered under [`portal-registry`](/openspec/specs/portal-registry/spec.md)
-- **AND** its `fetch_listings.immor_portal_<name>()` method accepts the `cache` argument per the [`http-layer`](/openspec/specs/http-layer/spec.md) contract
-- **THEN** no changes to `immor_fetch()`'s signature, dispatch loop, or error handling SHALL be required for caching to work for that portal
+- **WHEN** `immor_cache_read(key, max_age)` returns `NULL` (miss, stale, or read error)
+- **THEN** `immor_fetch()` SHALL emit the "Fetching from N portals" `cli_inform()` and dispatch to each portal via `fetch_listings()`
+- **AND** SHALL write the aggregated deduplicated result back via `immor_cache_write()` on completion (unless the result is empty or `cache = FALSE`)
 
-### Requirement: Cache flag interacts correctly with per-portal error isolation
+### Requirement: Cache does not leak below `fetch_listings()`
 
-`immor_fetch()`'s `tryCatch()`-based isolation SHALL treat cache errors like any other portal error — failing that portal, substituting an empty schema tibble, and continuing with the next portal.
+`fetch_listings()` and its per-portal methods SHALL retain their pre-caching signatures — the `cache` and `max_age` arguments are consumed entirely by `immor_fetch()`.
 
-#### Scenario: Cache-related portal failure is isolated
+#### Scenario: Portal methods take no cache argument
 
-- **WHEN** one portal's `fetch_listings()` raises an error whose root cause is the cache layer (already degraded to fail-open per [`http-layer`](/openspec/specs/http-layer/spec.md), so this is an exceptional case)
-- **THEN** `immor_fetch()` SHALL catch the error via `tryCatch()` and emit `cli::cli_warn()` naming the failing portal
-- **AND** SHALL substitute an empty [`immor_schema()`](/R/schema.R) tibble for that portal and continue with the next portal
+- **WHEN** any registered portal method `fetch_listings.immor_portal_<name>(portal, query, max_pages, ...)` is inspected
+- **THEN** its signature SHALL NOT include a `cache` or `max_age` parameter
+- **AND** the portal SHALL make its HTTP calls via `immor_request()` without any cache-related decorator
+
+#### Scenario: New portal inherits caching without any change
+
+- **WHEN** a new portal is registered under [`portal-registry`](/openspec/specs/portal-registry/spec.md) and implements the standard `fetch_listings.*()` contract
+- **THEN** the umbrella cache SHALL apply automatically because caching happens strictly above the S3 dispatch boundary
+- **AND** no cache-specific code in the portal SHALL be required

@@ -2,7 +2,7 @@
 % Please edit documentation in R/cache.R
 \name{immor_cache_dir}
 \alias{immor_cache_dir}
-\title{On-disk HTTP cache directory}
+\title{On-disk cache directory}
 \usage{
 immor_cache_dir()
 }
@@ -11,10 +11,10 @@ A length-1 character vector — the absolute path to the cache
 directory.
 }
 \description{
-Returns the directory used by \code{\link[=immor_request]{immor_request()}} when caching is opted
-in. The path follows the R user-directory convention via
-\code{\link[tools:R_user_dir]{tools::R_user_dir()}}. The directory is created lazily on first call
-if it does not already exist.
+Returns the directory used by \code{\link[=immor_fetch]{immor_fetch()}} to store its DuckDB
+cache when \code{cache = TRUE}. The path follows the R user-directory
+convention via \code{\link[tools:R_user_dir]{tools::R_user_dir()}}. The directory is created
+lazily on first call if it does not already exist.
 }
 \details{
 The location depends on the operating system:
@@ -24,13 +24,15 @@ The location depends on the operating system:
 \item Windows: \verb{\%LOCALAPPDATA\%/R/cache/R/immor/}
 }
 
-Users may safely delete the directory at any time; use
-\code{\link[=immor_cache_clear]{immor_cache_clear()}} for the programmatic equivalent.
+The DuckDB file lives inside this directory at
+\code{\link[=immor_cache_db_path]{immor_cache_db_path()}}. Users may safely delete the directory at
+any time; use \code{\link[=immor_cache_clear]{immor_cache_clear()}} for the programmatic equivalent.
 }
 \examples{
 immor_cache_dir()
 }
 \seealso{
-\code{\link[=immor_cache_clear]{immor_cache_clear()}} to purge the cache; \code{\link[=immor_fetch]{immor_fetch()}} and
-\code{\link[=immor_request]{immor_request()}} for the callers that write to it.
+\code{\link[=immor_cache_clear]{immor_cache_clear()}} to purge the cache;
+\code{\link[=immor_cache_db_path]{immor_cache_db_path()}} for the DuckDB file location;
+\code{\link[=immor_fetch]{immor_fetch()}} for the caller.
 }

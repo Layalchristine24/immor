@@ -25,9 +25,6 @@ new_portal <- function(name, base_url, ...) {
 #' @param portal An `immor_portal` object.
 #' @param query An [immor_query()] object.
 #' @param max_pages Maximum number of pages to fetch.
-#' @param cache Whether to use the on-disk HTTP response cache. Forwarded
-#'   by [immor_fetch()] to every method and passed through to
-#'   [immor_request()].
 #' @param ... Additional arguments passed to methods.
 #'
 #' @return A tibble conforming to [immor_schema()].
@@ -39,18 +36,12 @@ new_portal <- function(name, base_url, ...) {
 #' listings <- fetch_listings(portal, query)
 #' }
 #' @export
-fetch_listings <- function(portal, query, max_pages = 5L, cache = TRUE, ...) {
+fetch_listings <- function(portal, query, max_pages = 5L, ...) {
   UseMethod("fetch_listings")
 }
 
 #' @export
-fetch_listings.immor_portal <- function(
-  portal,
-  query,
-  max_pages = 5L,
-  cache = TRUE,
-  ...
-) {
+fetch_listings.immor_portal <- function(portal, query, max_pages = 5L, ...) {
   cli::cli_abort(c(
     "No {.fn fetch_listings} method for portal {.val {portal$name}}.",
     "i" = "Implement {.fn fetch_listings.immor_portal_{portal$name}}."

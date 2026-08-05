@@ -16,7 +16,9 @@ Roxygen: list(markdown = TRUE, roclets = c("collate", "namespace", "rd",
     "roxyglobals::global_roclet"))
 Imports:
     cli,
+    DBI,
     dplyr,
+    duckdb,
     glue,
     httr2,
     purrr,

@@ -61,7 +61,9 @@ A few rules that deviate from or extend the tidyverse defaults for this package:
 
 *   **Global variables**: `R/globals.R` is managed by [`roxyglobals`](https://github.com/anthonynorth/roxyglobals). Do not hand-edit it. Add `#' @autoglobal` (or `#' @globals varname`) to the roxygen block of the function that needs it, then run `devtools::document()`.
 
-*   **HTTP**: all outbound HTTP calls MUST go through `immor_request()` so they inherit user-agent identification, rate limiting, retry-with-backoff, and (opt-in) response caching. Do not call `httr2::request()` directly at the fetch layer. Every `fetch_listings.immor_portal_<name>()` method MUST accept a `cache = TRUE` argument and forward it (with an appropriate `max_age`) to every `immor_request()` call — 3600 seconds for archive/index pages, 86400 seconds for stable detail pages is the convention.
+*   **HTTP**: all outbound HTTP calls MUST go through `immor_request()` so they inherit user-agent identification, rate limiting, and retry-with-backoff. Do not call `httr2::request()` directly at the fetch layer.
+
+*   **Caching**: the on-disk cache lives at the `immor_fetch()` umbrella level, not at the HTTP layer. New portals inherit caching automatically — they do NOT need a `cache` argument or any cache-specific plumbing. See [`R/cache.R`](/R/cache.R) for the DuckDB-backed helpers (`immor_cache_dir()`, `immor_cache_db_path()`, `immor_cache_clear()`).
 
 For everything else, defer to <https://style.tidyverse.org>.
 
