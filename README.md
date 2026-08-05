@@ -25,11 +25,18 @@ pak::pak("Layalchristine24/immor")
 
 ## Usage
 
+`immor_fetch()` is the umbrella entry point. The first call scrapes both
+portals; subsequent calls within `max_age` (default 3600 seconds) return
+the cached tibble without touching the network.
+
 ``` r
 library(immor)
 
-# Fetch listings from all portals
-listings <- immor_fetch(immor_query())
+# Fetch listings from all portals. `query = immor_query()` is the default
+# (both portals ignore query params today — filter post-fetch with dplyr).
+# First call scrapes; subsequent calls hit the DuckDB cache.
+listings <- immor_fetch()
+listings <- immor_fetch()   # cache hit
 
 # Inspect the result
 dplyr::glimpse(listings)              # 28-column schema with types and sample values
@@ -45,6 +52,37 @@ listings |> dplyr::filter(transaction_type == "rent")
 # Check distinct values before filtering
 dplyr::distinct(listings, portal)
 dplyr::distinct(listings, transaction_type)
+```
+
+### Caching
+
+Results are cached in an on-disk DuckDB file. Repeat calls with the same
+`(portals, max_pages, query)` shape within `max_age` seconds skip the
+network.
+
+``` r
+# Where the cache lives (OS-conventional path via tools::R_user_dir())
+immor_cache_dir()
+immor_cache_db_path()
+
+# Force a fresh scrape while still updating the cache
+listings <- immor_fetch(max_age = 0)
+
+# Skip the cache entirely for this call — do not read, do not write
+listings <- immor_fetch(cache = FALSE)
+
+# Accept any cached entry regardless of age (never trigger a scrape
+# unless the cache is empty). Useful in interactive sessions where
+# yesterday's data is good enough.
+listings <- immor_fetch(max_age = Inf)
+
+# Purge the on-disk cache
+immor_cache_clear()
+
+# Global kill switch — disables caching for every immor_fetch() call
+# in the current R session. The switch also fires once, informatively,
+# when set: "! Cache disabled by IMMOR_NO_CACHE."
+Sys.setenv(IMMOR_NO_CACHE = "1")
 ```
 
 ## Visual Pipeline
