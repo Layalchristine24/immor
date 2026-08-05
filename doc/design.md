@@ -78,6 +78,7 @@ Start with the umbrella, then descend as needed.
 | `listing-schema` | `immor_schema()` — 28-column canonical zero-row tibble. Common-denominator approach; missing portal fields become `NA`. | [`/openspec/specs/listing-schema/spec.md`](/openspec/specs/listing-schema/spec.md) |
 | `type-enforcement` | `ensure_type()` — `vctrs::vec_cast()` wrapper; `validate_listings()` at every portal's exit point. Fail fast, fail early, fail clear. | [`/openspec/specs/type-enforcement/spec.md`](/openspec/specs/type-enforcement/spec.md) |
 | `http-layer` | `immor_request()` — user-agent, rate limiting (default 1 req / 2 s per host), 3-attempt retry with exponential backoff. | [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md) |
+| `listings-cache` | On-disk DuckDB store for `immor_fetch()` results. `immor_cache_dir()` / `immor_cache_db_path()` / `immor_cache_clear()` helpers. `IMMOR_NO_CACHE` kill switch. Fail-open on DuckDB errors. | [`/openspec/specs/listings-cache/spec.md`](/openspec/specs/listings-cache/spec.md) |
 | `portal-registry` | `new_portal()` + `immor_portals()` + `immor_portal()`; the `fetch_listings` / `parse_listing` S3 generics. | [`/openspec/specs/portal-registry/spec.md`](/openspec/specs/portal-registry/spec.md) |
 | `portal-flatfox` | REST-API scraper for `flatfox.ch/api/v1/public-listing/` — offset/limit pagination, `-published` ordering. | [`/openspec/specs/portal-flatfox/spec.md`](/openspec/specs/portal-flatfox/spec.md) |
 | `portal-weckaeby` | HTML scraper for `weck-aeby.ch` (CasaWP WordPress plugin) — two-stage archive → detail fetch, 10 s crawl delay. | [`/openspec/specs/portal-weckaeby/spec.md`](/openspec/specs/portal-weckaeby/spec.md) |
@@ -162,7 +163,36 @@ See [`/openspec/specs/type-enforcement/spec.md`](/openspec/specs/type-enforcemen
 
 **One rule:** per-portal delay overrides may only **increase** the throttle. Weck-aeby's `robots.txt` mandates a 10-second crawl delay; `portal_weckaeby()` respects that by passing `delay = 10`. Nothing shortens the default `delay = 2`.
 
-See [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md).
+#### Caching sits above the HTTP layer
+
+Response caching is **not** an HTTP-layer concern in immor. `immor_fetch(cache = TRUE)` (the default) consults an on-disk DuckDB cache keyed by the `(portals, max_pages, query)` shape *before* dispatching to any portal. On a hit within `max_age` (default 3600 s), the cached tibble is returned and no portal method runs. On a miss, portals scrape as normal and the aggregated result is written back to the cache.
+
+```
+immor_fetch(query, cache = TRUE, max_age = 3600)
+        │
+        ├── immor_cache_read(key, max_age)
+        │        └── DuckDB at immor_cache_db_path()
+        │             (SELECT * FROM immor_listings WHERE cache_key = ? …)
+        │
+        ├── on hit: return cached tibble  ─────────────────┐
+        │                                                  │
+        └── on miss: dispatch to portals ─── fetch_listings.*() → immor_request() → httr2
+                                                          │
+                                                          ▼
+                             immor_cache_write(key, result)  →  DuckDB append
+```
+
+**Why cache at the umbrella level, not per-request:** initial design tried `httr2::req_cache()` in the HTTP layer. Live probing showed neither portal advertises the headers `req_cache()` needs to persist a response — flatfox sends `Cache-Control: private` with no `max-age`, weck-aeby sends none of `Cache-Control`, `ETag`, `Last-Modified`, `Expires`. `httr2::req_cache()` follows RFC 7234 and correctly refuses to cache uncacheable responses; its `max_age` argument caps already-cacheable entries and does not force client-side caching. Caching at the parsed-listings level bypasses the problem entirely.
+
+Opt-outs:
+
+- Per call: `immor_fetch(query, cache = FALSE)`.
+- Globally: `Sys.setenv(IMMOR_NO_CACHE = "1")` (also `"true"` / `"yes"`, case-insensitive). The kill switch emits `cli::cli_inform()` exactly once per session so users know why cache flags appear ineffective.
+- Fail-open: any DuckDB error falls through to a live scrape with a one-off `cli::cli_warn()`. Correctness beats speed.
+
+New portals ([D1](/doc/roadmap.md), [D2](/doc/roadmap.md)) inherit caching automatically — the umbrella lives above `fetch_listings()` dispatch, so no per-portal code is needed.
+
+See [`/openspec/specs/http-layer/spec.md`](/openspec/specs/http-layer/spec.md) for the HTTP layer contract and [`/openspec/specs/listings-cache/spec.md`](/openspec/specs/listings-cache/spec.md) for the cache contract.
 
 ### 4. S3 dispatch keeps portals pluggable
 
@@ -371,7 +401,6 @@ Documented so you don't spend time proposing them:
 - **Filtering at the API layer.** [`query-construction`](/openspec/specs/query-construction/spec.md) is intentionally empty; filter after fetch via `dplyr::filter()`. This matches flatfox's actual behaviour (its public API ignores filter params) and keeps the contract with `blockr.immor` simple.
 - **Fuzzy deduplication.** Currently `method = "exact"` only. Fuzzy matching is on [roadmap.md](roadmap.md).
 - **A Shiny app.** The interactive UI lives in the companion package [`blockr.immor`](https://github.com/Layalchristine24/blockr.immor). immor is the data engine; it does not ship UI.
-- **Response caching.** Not currently implemented. `httr2::req_cache()` is on [roadmap.md](roadmap.md); until then, every `immor_fetch()` re-hits the network.
 
 ---
 

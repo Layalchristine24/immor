@@ -39,7 +39,9 @@ fetch_listings.immor_portal_weckaeby <- function(
     page_url <- paste0(base_url, page$path)
     links <- weckaeby_fetch_links(page_url)
 
-    if (length(links) == 0) next
+    if (length(links) == 0) {
+      next
+    }
 
     cli::cli_inform(
       "Found {length(links)} listing{?s} on {.url {page_url}}."
@@ -89,7 +91,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
   title <- html |>
     rvest::html_element(".title") |>
     rvest::html_text2()
-  if (is.na(title)) title <- NA_character_
+  if (is.na(title)) {
+    title <- NA_character_
+  }
 
   maps_link <- html |> rvest::html_element("a[href*='google.com/maps']")
   address_text <- if (!is.na(maps_link)) {
@@ -104,7 +108,9 @@ parse_listing.immor_portal_weckaeby <- function(portal, raw_listing) {
     price_text <- weckaeby_detail_value(details, "Loyer")
   }
   price <- weckaeby_parse_price(price_text)
-  if (!is.na(price) && price == 0) price <- NA_real_
+  if (!is.na(price) && price == 0) {
+    price <- NA_real_
+  }
 
   rooms_text <- weckaeby_detail_value(details, "Nombre de pi")
   rooms <- if (!is.na(rooms_text)) {
@@ -235,13 +241,17 @@ weckaeby_fetch_detail <- function(detail_url) {
 }
 
 weckaeby_parse_price <- function(text) {
-  if (is.null(text) || is.na(text)) return(NA_real_)
+  if (is.null(text) || is.na(text)) {
+    return(NA_real_)
+  }
   text <- trimws(text)
   if (grepl("sur demande|auf Anfrage|on request", text, ignore.case = TRUE)) {
     return(NA_real_)
   }
   num_str <- gsub("[^0-9]", "", text)
-  if (nchar(num_str) == 0) return(NA_real_)
+  if (nchar(num_str) == 0) {
+    return(NA_real_)
+  }
   as.numeric(num_str)
 }
 
@@ -272,7 +282,9 @@ weckaeby_extract_pk <- function(url) {
 
 weckaeby_parse_details_block <- function(html) {
   details_div <- html |> rvest::html_element("div.details")
-  if (is.na(details_div)) return(list())
+  if (is.na(details_div)) {
+    return(list())
+  }
 
   text <- rvest::html_text2(details_div)
   lines <- strsplit(text, "\n")[[1]]

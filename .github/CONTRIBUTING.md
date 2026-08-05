@@ -63,6 +63,8 @@ A few rules that deviate from or extend the tidyverse defaults for this package:
 
 *   **HTTP**: all outbound HTTP calls MUST go through `immor_request()` so they inherit user-agent identification, rate limiting, and retry-with-backoff. Do not call `httr2::request()` directly at the fetch layer.
 
+*   **Caching**: the on-disk cache lives at the `immor_fetch()` umbrella level, not at the HTTP layer. New portals inherit caching automatically — they do NOT need a `cache` argument or any cache-specific plumbing. See [`R/cache.R`](/R/cache.R) for the DuckDB-backed helpers (`immor_cache_dir()`, `immor_cache_db_path()`, `immor_cache_clear()`).
+
 For everything else, defer to <https://style.tidyverse.org>.
 
 ### Testing conventions

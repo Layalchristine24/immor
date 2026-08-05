@@ -4,7 +4,14 @@
 \alias{immor_fetch}
 \title{Fetch listings from multiple portals}
 \usage{
-immor_fetch(query, portals = NULL, deduplicate = TRUE, max_pages = 5L)
+immor_fetch(
+  query = immor_query(),
+  portals = NULL,
+  deduplicate = TRUE,
+  max_pages = 5L,
+  cache = TRUE,
+  max_age = 3600
+)
 }
 \arguments{
 \item{query}{An \code{\link[=immor_query]{immor_query()}} object specifying search
@@ -18,6 +25,17 @@ across portals.}
 
 \item{max_pages}{Maximum number of result pages to fetch
 per portal.}
+
+\item{cache}{Whether to consult and populate the on-disk cache.
+Defaults to \code{TRUE}. The \code{IMMOR_NO_CACHE} environment variable
+(values \code{"1"}, \code{"true"}, \code{"yes"}, case-insensitive) overrides this
+argument globally.}
+
+\item{max_age}{Maximum cache-entry age in seconds before it is
+considered stale and re-fetched. Defaults to \code{3600} (one hour).
+Set \code{max_age = Inf} to accept any cached entry regardless of age;
+\code{max_age = 0} forces a re-fetch while still writing the new result
+into the cache.}
 }
 \value{
 A tibble conforming to \code{\link[=immor_schema]{immor_schema()}}.
@@ -26,9 +44,19 @@ A tibble conforming to \code{\link[=immor_schema]{immor_schema()}}.
 Searches across one or more Swiss real estate portals
 and returns a unified tibble of listings.
 }
+\details{
+Results are cached in an on-disk DuckDB database at
+\code{\link[=immor_cache_db_path]{immor_cache_db_path()}}. Repeat calls with the same
+\verb{(portals, max_pages, query)} shape within \code{max_age} seconds return
+the cached listings without hitting the network.
+}
 \examples{
 \dontrun{
 query <- immor_query()
 listings <- immor_fetch(query)
+# Fresh fetch, no cache:
+listings <- immor_fetch(query, cache = FALSE)
+# Accept any cached entry regardless of age:
+listings <- immor_fetch(query, max_age = Inf)
 }
 }

@@ -15,10 +15,10 @@ Every entry lists (a) what, (b) why, (c) what would unblock it or what it depend
 
 ## Package status snapshot (2026-08)
 
-- Version: `0.0.0.9003` (development).
+- Version: `0.0.0.9004` (development).
 - Portals working: `flatfox.ch`, `weck-aeby.ch`.
-- Tests passing: 60+ (see [`/tests/testthat/`](/tests/testthat/)).
-- R CMD check: 0 errors, 0 warnings, 0 notes.
+- Tests passing: 150+ (see [`/tests/testthat/`](/tests/testthat/)).
+- R CMD check: 0 errors, 0 warnings, 1 accepted `.claude` NOTE (see Note D below).
 - CRAN: **not planned** — internal / GitHub-only release model.
 - Companion: [`blockr.immor`](https://github.com/Layalchristine24/blockr.immor) v0.0.0.9000.
 
@@ -26,23 +26,22 @@ Every entry lists (a) what, (b) why, (c) what would unblock it or what it depend
 
 ## 🚧 Next
 
-Items that are the most likely next unit of work. Order is rough priority, not strict sequence.
+Items that are the most likely next unit of work. Order is rough priority, not strict sequence. **Current priority chain:** portals → robustness → UI. That is, expand the portal set (N1) before growing UI features in the companion package (N3).
 
-### N1. HTTP response caching
+### N1. CasaWP toolkit + additional CasaWP-based portals
 
-**What:** wire `httr2::req_cache()` into [`immor_request()`](/R/http.R) so repeated `immor_fetch()` calls within a session don't hammer the network.
+**What:** factor weck-aeby's parser helpers into a re-usable `casawp_*` toolkit, then add one or two more CasaWP-based Swiss agency sites to exercise it.
 
-**Why:** interactive development (RStudio / Positron) re-runs `immor_fetch()` frequently. Every call today re-fetches ~33 k flatfox listings + walks weck-aeby's 20 detail pages. That's slow and impolite.
+**Why:** promotes the deferred D2 item (previously "not worth doing until 3+ sites planned") because expanding beyond a single CasaWP portal is both a portal-set growth AND a robustness win — factoring shared parsers removes duplication and forces clearer separation between shared and site-specific logic. Also unblocks D9 (cross-portal comparison block) later.
 
 **Design sketch:**
-- Cache directory: `tools::R_user_dir("immor", "cache")` (respects OS conventions).
-- Cache key: request URL + relevant headers.
-- TTL: portal-configurable. Sensible default: 1 hour for listing archives, 24 hours for detail pages.
-- Opt-out via `immor_fetch(cache = FALSE)` and env var `IMMOR_NO_CACHE=1`.
+- Extract `weckaeby_parse_price()`, `weckaeby_parse_address()`, `weckaeby_parse_details_block()`, `weckaeby_extract_pk()`, `weckaeby_detail_value()` into a shared `R/casawp.R` under `casawp_*` names.
+- New portals implement a thin `portal-<name>.R` that plugs into the toolkit and overrides only site-specific bits (URL paths, transaction-type slugs, French vs. German labels).
+- Candidate sites TBD — survey pass on Casasoft's public partner list.
 
-**Unblocks / touched capabilities:** [`http-layer`](/openspec/specs/http-layer/spec.md) gains cache requirements. [`multi-portal-fetch`](/openspec/specs/multi-portal-fetch/spec.md) gains a `cache` argument.
+**Unblocks / touched capabilities:** modifies [`portal-weckaeby`](/openspec/specs/portal-weckaeby/spec.md) (refactor path); adds new `portal-<name>` capability specs for each new site. May also need a new `casawp-toolkit` capability spec if the shared helpers become a documented contract.
 
-**Dependencies:** none new — `httr2::req_cache()` is already available.
+**Dependencies:** none new — existing `rvest` + `httr2` stack covers CasaWP sites.
 
 ---
 
@@ -50,7 +49,7 @@ Items that are the most likely next unit of work. Order is rough priority, not s
 
 **What:** extend [`immor_deduplicate()`](/R/deduplicate.R) with `method = "fuzzy"` — currently only `"exact"` is supported.
 
-**Why:** the same apartment appears on flatfox and weck-aeby with tiny differences: `"Bahnhofstrasse 12"` vs. `"Bahnhofstr. 12"`, price `2400` vs. `2500` because one includes CHF 100 for utilities. Exact-match today misses these; fuzzy would catch them.
+**Why:** the same apartment appears on flatfox and weck-aeby (and, once N1 lands, on other CasaWP sites) with tiny differences: `"Bahnhofstrasse 12"` vs. `"Bahnhofstr. 12"`, price `2400` vs. `2500` because one includes CHF 100 for utilities. Exact-match today misses these; fuzzy would catch them. Priority rises with portal count.
 
 **Design sketch:**
 - Address normalisation: strip abbreviations (`str.` → `strasse`), lowercase, collapse whitespace.
@@ -69,9 +68,9 @@ Items that are the most likely next unit of work. Order is rough priority, not s
 
 **What:** improve the three blockr blocks in [`blockr.immor`](https://github.com/Layalchristine24/blockr.immor) — source, dedup, map — based on real-user friction.
 
-**Why:** the interactive UI is the primary consumer of immor. Cleaner UX validates the split of concerns (immor = data engine, blockr.immor = UI).
+**Why:** the interactive UI is the primary consumer of immor. Cleaner UX validates the split of concerns (immor = data engine, blockr.immor = UI). Comes AFTER N1 (portals) and N2 (fuzzy dedup) so the UI can showcase both the extra portals and cross-portal fuzzy matches.
 
-**Not owned by this repo** — tracked here for cross-reference. Concrete items: filter block, summary-stats block, price-histogram block.
+**Not owned by this repo** — tracked here for cross-reference. Concrete items: filter block, summary-stats block, price-histogram block. See also D10 (stale-while-revalidate helpers) which becomes relevant once N3 starts.
 
 ---
 
@@ -104,15 +103,13 @@ Items we want but that are not the next unit of work. Reason for deferral is lis
 
 ---
 
-### D2. Additional CasaWP-based agency sites
+### D2. Long-tail CasaWP-based agency sites
 
-**What:** portals for the ~200+ Swiss agencies using [Casasoft AG's CasaWP WordPress plugin](https://casasoft.ch).
+**What:** the remaining ~200+ Swiss agencies using [Casasoft AG's CasaWP WordPress plugin](https://casasoft.ch), beyond the initial one or two added under N1.
 
-**Why not now:** each individual CasaWP site has a small listing count (~10–30). Volume-per-effort ratio is unfavourable versus a single big portal. Also each site can override the CasaWP defaults, so per-site testing is still needed.
+**Why not now:** N1 promotes the toolkit + first extra sites. The long tail follows the same pattern — each new site is ~1 day of work — so it becomes a maintenance backlog rather than a design item. Add sites as concrete demand appears (user request, geographic gap in coverage).
 
-**Path to unblock:** if we generalise the weck-aeby parser into a re-usable `casawp_*` toolkit ([`/R/portal-weckaeby.R`](/R/portal-weckaeby.R) already has parser helpers that could be extracted), adding a new CasaWP site becomes ~1 day of work. Worth doing once we have 3+ CasaWP sites planned.
-
-**Design sketch:** factor `weckaeby_parse_price()`, `weckaeby_parse_address()`, `weckaeby_parse_details_block()` into a shared `casawp_*` helper file. New CasaWP portals then subclass and override only what's site-specific.
+**Path to add a new one:** implement `R/portal-<name>.R` on top of the `casawp_*` toolkit shipped in N1, add fixture-based tests, register in `R/portals.R`, draft a short OpenSpec change with a `portal-<name>` capability spec.
 
 ---
 
@@ -181,6 +178,29 @@ Items we want but that are not the next unit of work. Reason for deferral is lis
 **What:** a blockr block that pairs listings by fuzzy-dedup key and shows side-by-side price / rooms differences across portals.
 
 **Why not now:** N2 (fuzzy dedup) must land first. Once fuzzy dedup ships with a `dedup_confidence` column, this block becomes a straightforward render.
+
+---
+
+### D10. Stale-while-revalidate helpers for `blockr.immor`
+
+**What:** two small helpers on top of [`listings-cache`](/openspec/specs/listings-cache/spec.md) so `blockr.immor` can implement a "keep yesterday's data visible, refresh in the background on button click, never show a blank dashboard" UX.
+
+- `immor_cache_read_only(portals, max_pages, query)` — returns the cached tibble or `NULL`; never scrapes. Lets a Shiny app initialise its `reactiveVal(listings)` without ever blocking, and decide "show empty state" vs "trigger a background scrape" for a cold-start machine.
+- `immor_cache_info()` — returns a `tibble(cache_key, cached_at, n_rows)`. Lets the dashboard render "Updated 2 hours ago" without externally tracking timestamps, and survives R session restarts.
+
+**Why not now:** priority chain is portals → robustness → UI, so N1 (CasaWP toolkit + more sites) and N2 (fuzzy dedup) land first. `blockr.immor` can implement stale-while-revalidate today with `immor_fetch(max_age = Inf)` at load + `promises::future_promise(immor_fetch(max_age = 0))` at button click; the helpers above are polish, not blockers, and they become genuinely useful only once N3 (blockr blocks polish) is in flight.
+
+**Design sketch:**
+- Both helpers live in [`/R/cache.R`](/R/cache.R) alongside `immor_cache_dir()` / `immor_cache_db_path()` / `immor_cache_clear()`.
+- `immor_cache_read_only()` is a thin wrapper around the internal `immor_cache_read(key, max_age = Inf)` that already exists — the trick is exposing it as public API with a stable signature.
+- `immor_cache_info()` is a `SELECT cache_key, MAX(cached_at) AS cached_at, COUNT(*) AS n_rows FROM immor_listings GROUP BY cache_key` on the DuckDB store.
+- Neither helper triggers a scrape; both are safe to call from anywhere in a Shiny reactive graph.
+
+**Unblocks / touched capabilities:** modifies [`listings-cache`](/openspec/specs/listings-cache/spec.md) with two ADDED requirements.
+
+**Dependencies:** none — only requires the DuckDB cache landed in `http-response-caching`.
+
+**Not addressing here** (also deferred until robustness work lands): `immor_fetch_async()` returning a `promises::promise` — nice one-liner in blockr but couples immor to async infra. Blockr can wrap `immor_fetch()` in `promises::future_promise()` itself.
 
 ---
 

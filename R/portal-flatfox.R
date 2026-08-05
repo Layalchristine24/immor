@@ -41,12 +41,16 @@ fetch_listings.immor_portal_flatfox <- function(
     body <- httr2::resp_body_json(resp)
     results <- body$results %||% list()
 
-    if (length(results) == 0) break
+    if (length(results) == 0) {
+      break
+    }
 
     parsed <- purrr::map(results, \(x) parse_listing(portal, x))
     all_listings <- c(all_listings, parsed)
 
-    if (is.null(body$`next`)) break
+    if (is.null(body$`next`)) {
+      break
+    }
     offset <- offset + limit
   }
 

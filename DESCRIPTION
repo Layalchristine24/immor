@@ -16,7 +16,9 @@ Roxygen: list(markdown = TRUE, roclets = c("collate", "namespace", "rd",
     "roxyglobals::global_roclet"))
 Imports:
     cli,
+    DBI,
     dplyr,
+    duckdb,
     glue,
     httr2,
     purrr,
@@ -28,7 +30,8 @@ Suggests:
     ellmer,
     httptest2,
     roxyglobals,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/roxyglobals/filename: globals.R
 Config/roxyglobals/unique: FALSE
 Config/testthat/edition: 3
