@@ -1,9 +1,9 @@
-# Isolate the whole test run from the real HTTP cache directory. Individual
-# tests that exercise cache behaviour override these with withr::local_envvar().
-Sys.setenv(
-  IMMOR_NO_CACHE = "1",
-  R_USER_CACHE_DIR = tempfile("immor-tests-")
-)
+# Cache-touching tests (test-cache.R, test-http.R) isolate themselves per-test
+# via `withr::local_envvar()`, which restores state when each test finishes.
+# We deliberately DO NOT set IMMOR_NO_CACHE or R_USER_CACHE_DIR at helper load
+# time: `devtools::test()` runs in the interactive R session, so a global
+# `Sys.setenv()` here would leak into subsequent `immor_fetch()` calls and
+# silently disable caching.
 
 mock_flatfox_listing <- function(
   pk = 12345,
