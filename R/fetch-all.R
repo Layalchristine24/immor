@@ -39,7 +39,7 @@
 #' }
 #' @export
 immor_fetch <- function(
-  query,
+  query = immor_query(),
   portals = NULL,
   deduplicate = TRUE,
   max_pages = 5L,

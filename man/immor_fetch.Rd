@@ -5,7 +5,7 @@
 \title{Fetch listings from multiple portals}
 \usage{
 immor_fetch(
-  query,
+  query = immor_query(),
   portals = NULL,
   deduplicate = TRUE,
   max_pages = 5L,
