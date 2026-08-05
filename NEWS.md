@@ -1,5 +1,20 @@
 <!-- NEWS.md is maintained by https://fledge.cynkra.com, contributors should not edit this file -->
 
+# immor 0.0.0.9005 (2026-08-05)
+
+## Features
+
+### http
+
+- Add opt-in httr2::req_cache() to immor_request() (#4).
+
+## Chore
+
+### openspec
+
+- Archive http-response-caching + register listings-cache (#5).
+
+
 # immor 0.0.0.9004 (2026-08-02)
 
 ## Chore
